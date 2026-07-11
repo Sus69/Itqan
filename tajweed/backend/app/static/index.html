@@ -1,0 +1,2661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Itqān — Tajweed Teacher</title>
+    <meta name="description" content="Evaluate your Quran recitation using state-of-the-art DSP and stateful Silero VAD analysis.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital@0;1&family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #080B11;
+            --bg-secondary: #0F1420;
+            --bg-card: rgba(22, 28, 45, 0.7);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-hover: rgba(59, 130, 246, 0.4);
+            --accent-blue: #3B82F6;
+            --accent-purple: #8B5CF6;
+            --text-primary: #F8FAFC;
+            --text-secondary: #94A3B8;
+            --text-muted: #64748B;
+            --success: #10B981;
+            --danger: #EF4444;
+            --glow-color: rgba(139, 92, 246, 0.15);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-primary);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.08) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.08) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow-x: hidden;
+        }
+
+        header {
+            padding: 2rem 1.5rem;
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+            font-weight: 800;
+            font-size: 1.25rem;
+            color: white;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .logo-text {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #FFF, #94A3B8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .badge {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: #10B981;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        main {
+            max-width: 800px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 1rem 1.5rem 4rem;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .hero-section {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .hero-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 3rem;
+            font-weight: 800;
+            line-height: 1.15;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #FFFFFF 30%, #A5B4FC 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.02em;
+        }
+
+        .hero-subtitle {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* Glassmorphism Card */
+        .workspace-card {
+            background-color: var(--bg-card);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 2.5rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+            transition: var(--transition);
+        }
+
+        .workspace-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+        }
+
+        /* Tajweed Dashboard Classes Grid */
+        .rules-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+            max-height: 380px;
+            overflow-y: auto;
+            padding: 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            background: rgba(8, 11, 17, 0.3);
+        }
+
+        .rule-card {
+            background: rgba(15, 20, 32, 0.5);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 1.1rem;
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: left;
+        }
+
+        .rule-card:hover {
+            border-color: var(--border-hover);
+            transform: translateY(-2px);
+            background: rgba(15, 20, 32, 0.7);
+        }
+
+        .rule-card.active {
+            border-color: var(--accent-purple);
+            background: rgba(139, 92, 246, 0.08);
+            box-shadow: 0 0 15px rgba(139, 92, 246, 0.15);
+        }
+
+        .rule-card-category {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 0.25rem;
+            font-weight: 700;
+        }
+
+        .rule-card-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .section-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            color: var(--text-primary);
+            text-align: left;
+        }
+
+        .divider {
+            border: none;
+            border-top: 1px solid var(--border-color);
+            margin: 2rem 0;
+        }
+
+        .selected-rule-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        /* Phrase selection */
+        .phrase-selection-box {
+            background: rgba(8, 11, 17, 0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+
+        .phrase-selection-box h4 {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+        }
+
+        .phrase-options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .phrase-option {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: rgba(15, 20, 32, 0.4);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.75rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .phrase-option:hover {
+            border-color: var(--border-hover);
+        }
+
+        .phrase-option.active {
+            border-color: var(--accent-blue);
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        .phrase-option input {
+            cursor: pointer;
+        }
+
+        .phrase-option-text {
+            flex-grow: 1;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .phrase-badge {
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .phrase-badge.correct {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10B981;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .phrase-badge.incorrect {
+            background: rgba(239, 68, 68, 0.1);
+            color: #EF4444;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        /* Calligraphy Box */
+        .calligraphy-box {
+            background: linear-gradient(135deg, rgba(15, 20, 32, 0.7) 0%, rgba(8, 11, 17, 0.8) 100%);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2.25rem 1rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .arabic-text {
+            font-size: 2.5rem;
+            font-family: 'Amiri', serif;
+            color: #FFFFFF;
+            margin-bottom: 0.75rem;
+            direction: rtl;
+        }
+
+        .arabic-target-sub {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .arabic-target-sub span {
+            color: var(--accent-blue);
+            font-weight: 700;
+        }
+
+        .reference-audio-box {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(59, 130, 246, 0.02);
+            border: 1px dashed rgba(59, 130, 246, 0.2);
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 1.5rem;
+            gap: 1rem;
+        }
+
+        .reference-audio-box h5 {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .ref-audio-player {
+            height: 32px;
+            max-width: 250px;
+            width: 100%;
+        }
+
+        /* Tabs inside Studio */
+        .tabs-header {
+            display: flex;
+            background: rgba(8, 11, 17, 0.5);
+            border-radius: 12px;
+            padding: 0.25rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .tab-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 0.75rem 1rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: var(--transition);
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
+            color: var(--text-primary);
+            border: 1px solid rgba(139, 92, 246, 0.15);
+            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05);
+        }
+
+        .tajweed-tab-content {
+            display: none;
+        }
+
+        .tajweed-tab-content.active {
+            display: block;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        /* Upload Zone */
+        .upload-zone {
+            border: 2px dashed var(--border-color);
+            border-radius: 16px;
+            padding: 3rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            background: rgba(8, 11, 17, 0.2);
+        }
+
+        .upload-zone:hover {
+            border-color: var(--accent-blue);
+            background: rgba(59, 130, 246, 0.03);
+        }
+
+        .upload-icon {
+            font-size: 2.5rem;
+            color: var(--accent-blue);
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .upload-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .upload-subtitle {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        /* Recording panel */
+        .record-panel {
+            text-align: center;
+            padding: 1.5rem 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .record-btn-container {
+            position: relative;
+            width: 90px;
+            height: 90px;
+        }
+
+        .record-btn {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, #EF4444, #C084FC);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
+            transition: var(--transition);
+            z-index: 2;
+            position: relative;
+        }
+
+        .record-btn.recording {
+            animation: pulseRecord 1.5s infinite;
+            background: #EF4444;
+            box-shadow: 0 0 30px rgba(239, 68, 68, 0.6);
+        }
+
+        .pulse-ring {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: rgba(239, 68, 68, 0.3);
+            z-index: 1;
+            transform: scale(1);
+            opacity: 0;
+        }
+
+        .record-btn.recording + .pulse-ring {
+            animation: ringExpand 1.5s infinite;
+        }
+
+        .record-status {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .record-status .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-muted);
+        }
+
+        .record-status.active .dot {
+            background: var(--danger);
+            animation: blink 1s infinite alternate;
+        }
+
+        .waveform-container {
+            width: 100%;
+            height: 60px;
+            background: rgba(8, 11, 17, 0.4);
+            border-radius: 12px;
+            overflow: hidden;
+            display: none;
+            border: 1px solid var(--border-color);
+        }
+
+        .waveform-container.active {
+            display: block;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Preview Zone */
+        .preview-zone {
+            background: rgba(8, 11, 17, 0.4);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.25rem;
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        .preview-details {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            min-width: 0;
+        }
+
+        .audio-icon {
+            font-size: 1.5rem;
+            color: var(--accent-blue);
+        }
+
+        .file-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .file-size {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .remove-file-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 0.25rem;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .remove-file-btn:hover {
+            color: var(--danger);
+        }
+
+        .audio-player-wrapper {
+            flex-grow: 1;
+            max-width: 320px;
+        }
+
+        audio {
+            width: 100%;
+            height: 36px;
+            border-radius: 8px;
+        }
+
+        /* Action Buttons */
+        .action-container {
+            margin-top: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 1rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            color: white;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.25);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.35);
+        }
+
+        .btn-primary:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .btn-primary:disabled {
+            background: rgba(30, 41, 59, 0.5);
+            color: var(--text-muted);
+            cursor: not-allowed;
+            border: 1px solid var(--border-color);
+            box-shadow: none;
+        }
+
+        /* Loader */
+        .loader-container {
+            display: none;
+            text-align: center;
+            padding: 2rem 0;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .loader-container.active {
+            display: block;
+        }
+
+        .loader-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(139, 92, 246, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--accent-purple);
+            animation: spin 1s ease-in-out infinite;
+            margin: 0 auto 1.25rem;
+        }
+
+        .loader-text {
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .loader-subtext {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        /* Alert Panel */
+        .alert-panel {
+            display: none;
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            color: #FCA5A5;
+            padding: 1rem 1.25rem;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            margin-top: 1rem;
+            line-height: 1.5;
+            align-items: flex-start;
+            gap: 0.75rem;
+            animation: shake 0.4s ease-in-out;
+        }
+
+        .alert-panel.active {
+            display: flex;
+        }
+
+        .alert-icon {
+            font-weight: bold;
+            color: var(--danger);
+            font-size: 1.1rem;
+        }
+
+        /* Result Section */
+        .result-container {
+            display: none;
+            animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            background: rgba(16, 185, 129, 0.04);
+            border: 1px dashed rgba(16, 185, 129, 0.3);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-top: 1rem;
+            position: relative;
+        }
+
+        .result-container.active {
+            display: block;
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+
+        .result-badge {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            padding: 0.35rem 0.85rem;
+            border-radius: 99px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        /* Evaluation Banner */
+        .eval-banner {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: rgba(16, 185, 129, 0.05);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .eval-banner.fail {
+            background: rgba(239, 68, 68, 0.05);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .eval-status-icon {
+            font-size: 2rem;
+        }
+
+        .eval-status-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .eval-status-subtitle {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .eval-mistakes-box {
+            background: rgba(239, 68, 68, 0.04);
+            border: 1px solid rgba(239, 68, 68, 0.15);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+
+        .eval-mistakes-box h4 {
+            font-size: 0.85rem;
+            color: #EF4444;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .eval-mistakes-box ul {
+            padding-left: 1.25rem;
+            font-size: 0.85rem;
+            color: #FCA5A5;
+            line-height: 1.5;
+        }
+
+        /* Progress meters */
+        .metric-wrapper {
+            margin-bottom: 1.25rem;
+            text-align: left;
+        }
+
+        .metric-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-value {
+            color: var(--success);
+            font-weight: 700;
+        }
+
+        .progress-track {
+            height: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 99px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-blue), var(--success));
+            border-radius: 99px;
+            width: 0%;
+            transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1.25rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            background: rgba(8, 11, 17, 0.3);
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .details-item span {
+            color: var(--text-muted);
+            display: block;
+            margin-bottom: 0.15rem;
+            font-weight: 500;
+        }
+
+        .details-item strong {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .metric-info-sub {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+            text-align: right;
+        }
+
+        /* Footer */
+        footer {
+            padding: 2rem 1.5rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes pulseRecord {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes ringExpand {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(1.6); opacity: 0; }
+        }
+
+        @keyframes blink {
+            from { opacity: 0.4; }
+            to { opacity: 1; }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-4px); }
+            40%, 80% { transform: translateX(4px); }
+        }
+
+        /* App modes header */
+        .app-modes-header {
+            display: flex;
+            background: rgba(8, 11, 17, 0.6);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 0.35rem;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+        .mode-tab {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 0.9rem 1.25rem;
+            font-size: 1rem;
+            font-weight: 700;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: var(--transition);
+            font-family: 'Outfit', sans-serif;
+        }
+        .mode-tab:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.02);
+        }
+        .mode-tab.active {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.15));
+            color: white;
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05);
+        }
+
+        /* Curriculum levels grid */
+        .levels-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+        .level-card {
+            background: rgba(15, 20, 32, 0.4);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .level-card:hover {
+            border-color: var(--border-hover);
+            transform: translateY(-2px);
+        }
+        .level-card.active {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(59, 130, 246, 0.1));
+            border-color: var(--accent-purple);
+            box-shadow: 0 0 12px rgba(139, 92, 246, 0.15);
+        }
+        .level-num {
+            font-size: 1.5rem;
+            font-weight: 800;
+            font-family: 'Outfit', sans-serif;
+            background: linear-gradient(135deg, #FFF, var(--text-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.25rem;
+        }
+        .level-title {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: var(--text-muted);
+        }
+        .level-card.active .level-title {
+            color: var(--accent-purple);
+        }
+
+        /* Words selector grid */
+        .words-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+            gap: 0.75rem;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            background: rgba(8, 11, 17, 0.4);
+            max-height: 280px;
+            overflow-y: auto;
+            margin-bottom: 2rem;
+        }
+        .word-card {
+            background: rgba(15, 20, 32, 0.6);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem 0.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .word-card:hover {
+            border-color: var(--border-hover);
+            transform: scale(1.03);
+        }
+        .word-card.active {
+            background: rgba(59, 130, 246, 0.08);
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.15);
+        }
+        .word-card-arabic {
+            font-family: 'Amiri', serif;
+            font-size: 1.6rem;
+            color: white;
+            margin-bottom: 0.2rem;
+            direction: rtl;
+        }
+        .word-card-tag {
+            font-size: 0.6rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        /* Character segment blocks */
+        .character-blocks-wrapper {
+            margin: 1.5rem 0;
+            text-align: left;
+        }
+        .character-blocks-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+        }
+        .character-blocks {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: center;
+            background: rgba(8, 11, 17, 0.3);
+            padding: 1rem;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+        }
+        .char-block {
+            background: rgba(15, 20, 32, 0.8);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 0.5rem 0.85rem;
+            min-width: 55px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            user-select: none;
+        }
+        .char-block-letter {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 0.15rem;
+            font-family: 'Amiri', serif;
+        }
+        .char-block-time {
+            font-size: 0.6rem;
+            color: var(--text-muted);
+        }
+        
+        /* Char states */
+        .char-block.passed {
+            border-color: rgba(16, 185, 129, 0.4);
+            background: rgba(16, 185, 129, 0.08);
+        }
+        .char-block.passed .char-block-letter {
+            color: #10B981;
+        }
+        .char-block.failed {
+            border-color: rgba(239, 68, 68, 0.5);
+            background: rgba(239, 68, 68, 0.08);
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.1);
+            animation: pulseFailBorder 2.5s infinite;
+        }
+        .char-block.failed .char-block-letter {
+            color: #EF4444;
+        }
+        .char-block.neutral {
+            border-color: var(--border-color);
+            opacity: 0.5;
+        }
+        .char-block.focused {
+            border-color: var(--accent-purple) !important;
+            background: rgba(139, 92, 246, 0.12) !important;
+            box-shadow: 0 0 12px rgba(139, 92, 246, 0.25) !important;
+            transform: scale(1.05);
+        }
+
+        @keyframes pulseFailBorder {
+            0% { box-shadow: 0 0 0 0px rgba(239, 68, 68, 0.2); }
+            50% { box-shadow: 0 0 8px 2px rgba(239, 68, 68, 0.4); }
+            100% { box-shadow: 0 0 0 0px rgba(239, 68, 68, 0.2); }
+        }
+
+        /* Fix-It anatomical correction panel */
+        .fixit-panel {
+            margin-top: 1.5rem;
+            background: linear-gradient(135deg, rgba(22, 28, 45, 0.8) 0%, rgba(15, 20, 32, 0.9) 100%);
+            border: 1px solid rgba(139, 92, 246, 0.25);
+            border-radius: 20px;
+            padding: 1.75rem;
+            display: none;
+            animation: slideUp 0.4s ease-out;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        }
+        .fixit-panel.active {
+            display: block;
+        }
+        .fixit-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+            text-align: left;
+        }
+        .fixit-body {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 1.5rem;
+            align-items: center;
+        }
+        .vocal-anatomical-container {
+            background: rgba(8, 11, 17, 0.5);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 240px;
+        }
+        
+        /* SVG Anatomical styles */
+        .anatomical-svg {
+            width: 180px;
+            height: 180px;
+        }
+        .vocal-part {
+            fill: rgba(255, 255, 255, 0.05);
+            stroke: rgba(255, 255, 255, 0.15);
+            stroke-width: 1.5px;
+            transition: var(--transition);
+        }
+        .vocal-part.active {
+            fill: rgba(139, 92, 246, 0.25);
+            stroke: #A78BFA;
+            stroke-width: 2.5px;
+            filter: drop-shadow(0 0 6px rgba(139, 92, 246, 0.6));
+            animation: partPulse 1.8s infinite alternate;
+        }
+        @keyframes partPulse {
+            0% { fill: rgba(139, 92, 246, 0.15); }
+            100% { fill: rgba(139, 92, 246, 0.4); }
+        }
+        
+        .anatomical-labels {
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--accent-purple);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .fixit-controls {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 1rem;
+            text-align: left;
+        }
+        .fixit-instruction {
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: var(--text-secondary);
+        }
+        .fixit-instruction strong {
+            color: white;
+        }
+        .btn-punch-in {
+            background: linear-gradient(135deg, #EF4444, #8B5CF6);
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.25);
+            color: white;
+        }
+        .btn-punch-in:hover:not(:disabled) {
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.35);
+            transform: translateY(-2px);
+        }
+        .btn-punch-in.recording {
+            background: #EF4444;
+            animation: pulseRecord 1.5s infinite;
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 640px) {
+            header, footer {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+            .hero-title {
+                font-size: 2.25rem;
+            }
+            .workspace-card {
+                padding: 1.5rem;
+            }
+            .details-grid {
+                grid-template-columns: 1fr;
+            }
+            .preview-zone {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .audio-player-wrapper {
+                max-width: 100%;
+            }
+            .reference-audio-box {
+                flex-direction: column;
+                align-items: stretch;
+                text-align: center;
+            }
+            .levels-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .words-container {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .fixit-body {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo-container">
+            <div class="logo-icon">I</div>
+            <div class="logo-text">Itqān</div>
+        </div>
+        <span class="badge" id="server-status">Connecting...</span>
+    </header>
+
+    <main>
+        <div class="hero-section">
+            <h1 class="hero-title">Tajweed Teacher</h1>
+            <p class="hero-subtitle">Select a Tajweed class rule and record your recitation. Get real-time DSP feedback matching correctness guidelines.</p>
+        </div>
+
+        <div class="workspace-card">
+            <div class="tajweed-dashboard">
+                <!-- App Mode Selection Header -->
+                <div class="app-modes-header">
+                    <button class="mode-tab active" id="mode-tab-curriculum" onclick="switchDashboardMode('curriculum')">
+                        📖 Progressive Qaida
+                    </button>
+                    <button class="mode-tab" id="mode-tab-rules" onclick="switchDashboardMode('rules')">
+                        🎓 Tajweed Rules DB
+                    </button>
+                </div>
+
+                <!-- Progressive Curriculum Selection (Mode 1) -->
+                <div id="curriculum-selection-section" style="display: block;">
+                    <h2 class="section-title">1. Select Lesson Level</h2>
+                    <div class="levels-grid" id="levels-grid-container">
+                        <!-- 12 Level Cards will be dynamically populated here -->
+                    </div>
+                    
+                    <!-- Lesson Description Box -->
+                    <div id="level-description-box" style="display: none; background: rgba(139, 92, 246, 0.05); border: 1px solid var(--border-color); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem; text-align: left;">
+                        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.1rem; color: var(--accent-purple); margin-bottom: 0.5rem;" id="level-description-title">Lesson Overview</h3>
+                        <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; white-space: pre-line;" id="level-description-text"></p>
+                    </div>
+                    
+                    <h2 class="section-title" id="words-grid-title" style="display: none;">Select Practice Word</h2>
+                    <div class="words-container" id="words-grid-container" style="display: none;">
+                        <!-- Words of selected level will be dynamically populated here -->
+                    </div>
+                </div>
+
+                <!-- Classic Tajweed Rules Selection (Mode 2) -->
+                <div id="classic-rules-selection-section" style="display: none;">
+                    <h2 class="section-title">1. Select a Tajweed Rule to Evaluate</h2>
+                    <div class="rules-container" id="rules-grid">
+                        <!-- Rule cards dynamically populated here -->
+                    </div>
+                </div>
+
+                <!-- Step 2: Recitation Studio (visible when a rule is selected) -->
+                <div id="tajweed-studio" class="tajweed-studio-panel" style="display: none; margin-top: 2rem;">
+                    <hr class="divider">
+                    <h2 class="section-title">2. Recitation Studio</h2>
+                    <div class="selected-rule-header">
+                        <span class="badge" id="studio-rule-category">Category</span>
+                        <h3 id="studio-rule-title">Rule Name</h3>
+                    </div>
+                    
+                    <!-- Select Ayah Examples -->
+                    <div class="phrase-selection-box">
+                        <h4>Select a Phrase Version:</h4>
+                        <div class="phrase-options" id="phrase-options-list">
+                            <!-- Options populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Text Anchor Calligraphy -->
+                    <div class="calligraphy-box">
+                        <div class="arabic-text" id="studio-text-anchor">العربية</div>
+                        <div class="arabic-target-sub" id="studio-target-sub">Target Substring: <span>Sub</span></div>
+                    </div>
+
+                    <!-- Listen to Reference Audio -->
+                    <div class="reference-audio-box">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <h5 id="ref-audio-heading">Listen to Teacher Reference:</h5>
+                            <button id="toggle-teacher-mode-btn" class="badge" style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.2); color: var(--accent-purple); cursor: pointer; border-radius: 9999px; font-size: 0.7rem; font-weight: 700;" onclick="toggleTeacherMode()">
+                                🛠️ Enable Teacher Recording
+                            </button>
+                        </div>
+                        <audio id="reference-audio-player" class="ref-audio-player" controls></audio>
+                        
+                        <!-- Teacher Reference Recording panel -->
+                        <div id="teacher-record-panel" style="display: block; margin-top: 1rem; padding: 1rem; border: 1px dashed var(--accent-purple); border-radius: 12px; background: rgba(139, 92, 246, 0.03); text-align: left;">
+                            <div style="font-size: 0.8rem; font-weight: 700; color: var(--accent-purple); margin-bottom: 0.5rem; text-transform: uppercase;">Teacher Recording Console</div>
+                            <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+                                <button id="teacher-record-btn" class="btn" style="background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue)); color: white; padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 700; border: none; border-radius: 8px; cursor: pointer;" onclick="toggleTeacherReferenceRecording()">
+                                    🎙️ Record Reference
+                                </button>
+                                <button id="teacher-save-btn" class="btn" style="background: var(--success); color: white; padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 700; border: none; border-radius: 8px; cursor: pointer; display: none;" onclick="saveTeacherReference()">
+                                    💾 Save as Reference
+                                </button>
+                                <span id="teacher-record-status-label" style="font-size: 0.75rem; color: var(--text-secondary);">Click to record reference audio for this word.</span>
+                            </div>
+                            <audio id="teacher-preview-player" controls style="display: none; width: 100%; margin-top: 0.75rem; height: 32px;"></audio>
+                        </div>
+                    </div>
+
+                    <!-- Upload or Record live -->
+                    <div class="input-mode-tabs-wrapper">
+                        <div class="tabs-header">
+                            <button class="tab-btn active" id="tajweed-tab-upload-btn" onclick="switchTajweedTab('upload')">
+                                Upload File
+                            </button>
+                            <button class="tab-btn" id="tajweed-tab-record-btn" onclick="switchTajweedTab('record')">
+                                Record Mic
+                            </button>
+                        </div>
+                        
+                        <!-- Upload -->
+                        <div id="tajweed-tab-upload" class="tajweed-tab-content active">
+                            <div class="upload-zone" id="tajweed-drop-zone" onclick="document.getElementById('tajweed-audio-file').click()">
+                                <span class="upload-icon">📤</span>
+                                <h3 class="upload-title">Drag & drop your recording here</h3>
+                                <p class="upload-subtitle">Or browse your computer (WAV, MP3, etc.)</p>
+                                <input type="file" id="tajweed-audio-file" class="file-input" accept="audio/*" onchange="handleTajweedFileSelect(event)">
+                            </div>
+                        </div>
+                        
+                        <!-- Record -->
+                        <div id="tajweed-tab-record" class="tajweed-tab-content">
+                            <div class="record-panel">
+                                <div class="record-btn-container">
+                                    <button id="tajweed-record-btn" class="record-btn" onclick="toggleTajweedRecording()">
+                                        <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16" id="tajweed-record-icon">
+                                            <circle cx="8" cy="8" r="8"/>
+                                        </svg>
+                                    </button>
+                                    <div class="pulse-ring"></div>
+                                </div>
+                                <div id="tajweed-record-status" class="record-status">
+                                    <span class="dot"></span>
+                                    <span id="tajweed-record-status-text">Click circle to start recording</span>
+                                </div>
+                                <div class="waveform-container" id="tajweed-waveform-container">
+                                    <canvas id="tajweed-waveform-canvas"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Active File Preview for Tajweed -->
+                    <div id="tajweed-preview-zone" class="preview-zone" style="display: none; margin-top: 1.5rem;">
+                        <div class="preview-details">
+                            <span class="audio-icon">🎵</span>
+                            <div>
+                                <div class="file-name" id="tajweed-preview-name">recitation.wav</div>
+                                <div class="file-size" id="tajweed-preview-size">0.0 MB</div>
+                            </div>
+                        </div>
+                        <div class="audio-player-wrapper">
+                            <audio id="tajweed-audio-player" controls></audio>
+                        </div>
+                        <button class="remove-file-btn" onclick="clearTajweedAudio()" title="Remove file">
+                            <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                                <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Action Button -->
+                    <div class="action-container" style="margin-top: 1.5rem;">
+                        <button id="tajweed-eval-btn" class="btn btn-primary" onclick="submitTajweedEvalRequest()" disabled>
+                            Evaluate Recitation
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tajweed Loader -->
+            <div id="tajweed-loader" class="loader-container">
+                <div class="loader-spinner"></div>
+                <h4 class="loader-text">Analyzing Tajweed Articulation...</h4>
+                <p class="loader-subtext">Executing Silero VAD gating, computing active duration envelopes, and evaluating spectral centroid compliance.</p>
+            </div>
+
+            <!-- Tajweed Error panel -->
+            <div id="tajweed-error-panel" class="alert-panel">
+                <span class="alert-icon">⚠️</span>
+                <div id="tajweed-error-message">An error occurred while evaluating Tajweed.</div>
+            </div>
+
+            <!-- Tajweed Evaluation Result Display -->
+            <div id="tajweed-result-container" class="result-container">
+                <div class="result-header">
+                    <span class="result-badge" id="tajweed-eval-status-badge">Evaluation Complete</span>
+                    <span style="font-size: 0.8rem; font-weight: 500; color: var(--text-muted);">DSP Analysis Report</span>
+                </div>
+
+                <!-- Evaluation Banner -->
+                <div class="eval-banner" id="eval-banner-box">
+                    <div class="eval-status-icon" id="eval-status-icon">✅</div>
+                    <div style="text-align: left;">
+                        <div class="eval-status-title" id="eval-status-title">Recitation Compliant</div>
+                        <div class="eval-status-subtitle" id="eval-status-subtitle">Acoustic properties match the reference rule.</div>
+                    </div>
+                </div>
+
+                <!-- Aligned character blocks (Forced Alignment output) -->
+                <div class="character-blocks-wrapper" id="aligner-blocks-wrapper" style="display: none;">
+                    <div class="character-blocks-title">Aligned Pronunciation Phonemes (Click red block to focus/fix):</div>
+                    <div class="character-blocks" id="aligner-blocks-container">
+                        <!-- Filled by JS -->
+                    </div>
+                </div>
+
+                <!-- Fix-It Anatomical Panel -->
+                <div class="fixit-panel" id="fixit-panel">
+                    <div class="fixit-header">
+                        <span class="badge" style="background: rgba(239, 68, 68, 0.1); color: #EF4444; border-color: rgba(239, 68, 68, 0.2);">Fix-It Mode</span>
+                        <h4 style="font-weight: 800; color: white;">Pronunciation Refinement</h4>
+                    </div>
+                    <div class="fixit-body">
+                        <!-- Anatomical diagram -->
+                        <div class="vocal-anatomical-container">
+                            <svg class="anatomical-svg" viewBox="0 0 200 200">
+                                <!-- Head/Neck outline -->
+                                <path d="M40 180 C 40 140, 60 120, 80 120 C 80 100, 65 90, 60 80 C 55 70, 55 50, 75 35 C 95 20, 125 20, 145 35 C 165 50, 165 70, 160 80 C 155 90, 140 100, 140 120 C 160 120, 180 140, 180 180" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="2"/>
+                                <!-- Nasal Cavity (Al-Khayshum) -->
+                                <path id="part-khayshum" class="vocal-part" d="M100 50 C 90 50, 85 60, 90 70 C 95 80, 110 80, 110 70 Z"/>
+                                <!-- Empty Mouth (Al-Jawf) -->
+                                <path id="part-jawf" class="vocal-part" d="M110 85 C 105 85, 100 90, 105 105 C 115 105, 120 95, 115 85 Z"/>
+                                <!-- Throat (Al-Halq) -->
+                                <path id="part-halq" class="vocal-part" d="M105 125 C 100 125, 100 155, 105 155 C 110 155, 110 125, 105 125 Z"/>
+                                <!-- Tongue (Al-Lisan) -->
+                                <path id="part-lisan" class="vocal-part" d="M105 105 C 100 108, 95 112, 103 118 C 110 115, 112 110, 105 105 Z"/>
+                                <!-- Lips (Al-Shafatayn) -->
+                                <path id="part-shafatayn" class="vocal-part" d="M125 90 C 122 90, 122 100, 125 100 C 128 100, 128 90, 125 90 Z"/>
+                            </svg>
+                            <span class="anatomical-labels" id="anatomical-label-text">Focus Area</span>
+                        </div>
+                        
+                        <!-- Punch-in mic controls -->
+                        <div class="fixit-controls">
+                            <p class="fixit-instruction">
+                                Focus locked on letter <strong id="fixit-focused-char">X</strong>. 
+                                <span id="fixit-instruction-desc">Acoustic parameters was insufficient. Record a short micro-punch-in correction below.</span>
+                            </p>
+                            <button id="fixit-punch-in-btn" class="btn btn-punch-in" onclick="toggleFixitRecording()">
+                                🎙️ Record Micro Correction
+                            </button>
+                            <div id="fixit-record-status" style="font-size: 0.8rem; color: var(--text-secondary); text-align: center; display: none;">
+                                Recording...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 style="font-size: 0.9rem; margin-top: 1.5rem; margin-bottom: 0.75rem; text-align: left;">DSP Measurement Metrics:</h3>
+                
+                <!-- Metric 1: Duration -->
+                <div class="metric-wrapper">
+                    <div class="metric-labels">
+                        <span>Elongation Duration (Active Voice)</span>
+                        <span class="metric-value" id="eval-metric-duration-val">0.0s</span>
+                    </div>
+                    <div class="progress-track">
+                        <div class="progress-fill" id="eval-metric-duration-bar"></div>
+                    </div>
+                    <div class="metric-info-sub" id="eval-metric-duration-sub">Expected: >= 2.4s (tolerance: 0.2s)</div>
+                </div>
+
+                <!-- Metric 2: Spectral -->
+                <div class="metric-wrapper" id="eval-metric-spectral-wrapper">
+                    <div class="metric-labels">
+                        <span id="eval-metric-spectral-label">Spectral Feature Compliance</span>
+                        <span class="metric-value" id="eval-metric-spectral-val">0.0 Hz</span>
+                    </div>
+                    <div class="progress-track">
+                        <div class="progress-fill" id="eval-metric-spectral-bar"></div>
+                    </div>
+                    <div class="metric-info-sub" id="eval-metric-spectral-sub">Expected Range</div>
+                </div>
+
+                <div class="details-grid">
+                    <div class="details-item">
+                        <span>Evaluated Rule</span>
+                        <strong id="eval-detail-rule">Madd Lāzim</strong>
+                    </div>
+                    <div class="details-item">
+                        <span>VAD Gating Engine</span>
+                        <strong>Silero VAD JIT (Stateful)</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div>Itqān Tajweed Teacher &copy; 2026</div>
+        <div class="footer-links">
+            <span>FastAPI Server</span>
+            <span>Silero VAD JIT</span>
+        </div>
+    </footer>
+
+    <script>
+        let tajweedDb = null;
+        let qaidaMatrix = null;
+        let selectedClassId = null;
+        let selectedPhraseIndex = 0; // 0, 1, or 2
+        
+        // Progressive Curriculum States
+        let activeDashboardMode = 'curriculum'; // 'curriculum' or 'rules'
+        let selectedLevelId = null;
+        let selectedWordId = null;
+        let selectedWordArabic = '';
+        let selectedWordRule = '';
+        let currentEvalData = null; // Holds last analyze response
+        let activeFailedSegment = null; // For Fix-It focus
+        
+        let tajweedAudioBlob = null;
+        let tajweedAudioName = '';
+        let tajweedTab = 'upload';
+        
+        let tajweedMediaRecorder = null;
+        let tajweedAudioChunks = [];
+        let tajweedAudioContext = null;
+        let tajweedAnalyser = null;
+        let tajweedAnimationFrameId = null;
+
+        // Fix-It Loop Recording variables
+        let fixitMediaRecorder = null;
+        let fixitAudioChunks = [];
+
+        // Verify API Health Check on Page Load
+        async function checkServerHealth() {
+            const statusBadge = document.getElementById('server-status');
+            try {
+                const response = await fetch('/health');
+                const data = await response.json();
+                if (data.status === 'healthy') {
+                    statusBadge.innerText = 'Server Active';
+                    statusBadge.style.background = 'rgba(16, 185, 129, 0.1)';
+                    statusBadge.style.borderColor = 'rgba(16, 185, 129, 0.2)';
+                    statusBadge.style.color = '#10B981';
+                } else {
+                    statusBadge.innerText = 'Server Degraded';
+                    statusBadge.style.background = 'rgba(245, 158, 11, 0.1)';
+                    statusBadge.style.borderColor = 'rgba(245, 158, 11, 0.2)';
+                    statusBadge.style.color = '#F59E0B';
+                }
+            } catch (err) {
+                statusBadge.innerText = 'Server Offline';
+                statusBadge.style.background = 'rgba(239, 68, 68, 0.1)';
+                statusBadge.style.borderColor = 'rgba(239, 68, 68, 0.2)';
+                statusBadge.style.color = '#EF4444';
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            checkServerHealth();
+            loadTajweedClasses();
+            loadQaidaMatrix();
+        });
+
+        // Toggle modes: Progressive vs Classic
+        function switchDashboardMode(mode) {
+            if (activeDashboardMode === mode) return;
+            activeDashboardMode = mode;
+            stopAllRecordings();
+            clearTajweedAudio();
+            
+            // Hide result panels
+            document.getElementById('tajweed-result-container').classList.remove('active');
+            document.getElementById('tajweed-error-panel').classList.remove('active');
+            document.getElementById('tajweed-studio').style.display = 'none';
+            document.getElementById('fixit-panel').classList.remove('active');
+
+            // Switch active buttons
+            document.getElementById('mode-tab-curriculum').classList.toggle('active', mode === 'curriculum');
+            document.getElementById('mode-tab-rules').classList.toggle('active', mode === 'rules');
+
+            // Switch active selection panel views
+            document.getElementById('curriculum-selection-section').style.display = mode === 'curriculum' ? 'block' : 'none';
+            document.getElementById('classic-rules-selection-section').style.display = mode === 'rules' ? 'block' : 'none';
+        }
+
+        // 1. Classic Mode population
+        async function loadTajweedClasses() {
+            const grid = document.getElementById('rules-grid');
+            grid.innerHTML = '<div style="grid-column: 1/-1; padding: 2rem; color: var(--text-secondary);">Loading Tajweed database...</div>';
+            
+            try {
+                const response = await fetch('/api/v1/tajweed/classes');
+                const data = await response.json();
+                tajweedDb = data;
+                renderRulesGrid(data);
+            } catch (err) {
+                grid.innerHTML = '<div style="grid-column: 1/-1; padding: 2rem; color: var(--danger);">Failed to load database. Ensure the server is online.</div>';
+            }
+        }
+
+        function renderRulesGrid(db) {
+            const grid = document.getElementById('rules-grid');
+            grid.innerHTML = '';
+            
+            const classesList = Object.values(db).sort((a, b) => a.class_id - b.class_id);
+            
+            classesList.forEach(cls => {
+                const card = document.createElement('div');
+                card.className = `rule-card ${selectedClassId === cls.class_id ? 'active' : ''}`;
+                card.onclick = () => selectTajweedClass(cls.class_id);
+                card.innerHTML = `
+                    <div class="rule-card-category">${cls.category}</div>
+                    <div class="rule-card-title">${cls.rule_name}</div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function selectTajweedClass(classId) {
+            selectedClassId = classId;
+            selectedPhraseIndex = 0;
+            selectedWordId = null;
+            
+            document.querySelectorAll('#classic-rules-selection-section .rule-card').forEach((card, idx) => {
+                if (idx + 1 === classId) {
+                    card.classList.add('active');
+                } else {
+                    card.classList.remove('active');
+                }
+            });
+            
+            const studio = document.getElementById('tajweed-studio');
+            studio.style.display = 'block';
+            studio.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            
+            // Adjust studio elements for rules mode
+            document.querySelector('.phrase-selection-box').style.display = 'block';
+            document.querySelector('.reference-audio-box h5').innerText = "Listen to Reference Articulation:";
+            
+            updateStudioRuleDetails();
+            clearTajweedAudio();
+        }
+
+        function updateStudioRuleDetails() {
+            const cls = tajweedDb[selectedClassId.toString()];
+            document.getElementById('studio-rule-category').innerText = cls.category;
+            document.getElementById('studio-rule-title').innerText = cls.rule_name;
+            
+            const list = document.getElementById('phrase-options-list');
+            list.innerHTML = '';
+            
+            cls.phrases.forEach((phrase, idx) => {
+                const opt = document.createElement('div');
+                opt.className = `phrase-option ${selectedPhraseIndex === idx ? 'active' : ''}`;
+                opt.onclick = () => selectTajweedPhrase(idx);
+                
+                const badgeClass = phrase.is_correct ? 'correct' : 'incorrect';
+                const badgeText = phrase.is_correct ? 'Correct' : 'Intentional Error';
+                
+                opt.innerHTML = `
+                    <input type="radio" name="phrase_opt" ${selectedPhraseIndex === idx ? 'checked' : ''}>
+                    <div class="phrase-option-text">${phrase.text_anchor}</div>
+                    <span class="phrase-badge ${badgeClass}">${badgeText}</span>
+                `;
+                list.appendChild(opt);
+            });
+            
+            updateSelectedPhraseView();
+        }
+
+        // 2. Progressive Mode Ingestion
+        async function loadQaidaMatrix() {
+            try {
+                const response = await fetch('/api/v1/qaida/matrix');
+                const data = await response.json();
+                qaidaMatrix = data;
+                renderLevelsGrid();
+            } catch (err) {
+                console.error("Failed to load progressive Qaida matrix: ", err);
+            }
+        }
+
+        function renderLevelsGrid() {
+            const container = document.getElementById('levels-grid-container');
+            container.innerHTML = '';
+            
+            if (!qaidaMatrix) return;
+            
+            Object.keys(qaidaMatrix).forEach(lvlId => {
+                const lesson = qaidaMatrix[lvlId];
+                const card = document.createElement('div');
+                card.className = `level-card ${selectedLevelId === parseInt(lvlId) ? 'active' : ''}`;
+                card.id = `level-card-${lvlId}`;
+                card.onclick = () => selectLevel(parseInt(lvlId));
+                
+                card.innerHTML = `
+                    <div class="level-num">L${lvlId}</div>
+                    <div class="level-title">${lesson.lesson_name.split(' ')[0]}</div>
+                `;
+                container.appendChild(card);
+            });
+            
+            // Auto select Level 1 initially
+            selectLevel(1);
+        }
+
+        function selectLevel(lvlId) {
+            selectedLevelId = lvlId;
+            selectedWordId = null;
+            selectedClassId = null;
+
+            document.querySelectorAll('.level-card').forEach(card => {
+                if (card.id === `level-card-${lvlId}`) {
+                    card.classList.add('active');
+                } else {
+                    card.classList.remove('active');
+                }
+            });
+
+            const lesson = qaidaMatrix[lvlId.toString()];
+
+            // Display level description
+            const descBox = document.getElementById('level-description-box');
+            const descText = document.getElementById('level-description-text');
+            const descTitle = document.getElementById('level-description-title');
+            
+            if (lesson && lesson.lesson_description) {
+                descTitle.innerText = `${lesson.lesson_name} Overview`;
+                descText.innerText = lesson.lesson_description;
+                descBox.style.display = 'block';
+            } else {
+                descBox.style.display = 'none';
+            }
+
+            document.getElementById('words-grid-title').style.display = 'block';
+            const container = document.getElementById('words-grid-container');
+            container.style.display = 'grid';
+            container.innerHTML = '';
+
+            const items = lesson.items || [];
+            
+            items.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'word-card';
+                card.onclick = () => selectWord(item.item_id, item.word_arabic, item.rule_mask, item.reference_audio_path, lesson.lesson_name);
+                card.innerHTML = `
+                    <div class="word-card-arabic">${item.word_arabic}</div>
+                    <div class="word-card-tag">${item.rule_mask.replace(/_/g, ' ')}</div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function selectWord(wordId, wordArabic, ruleMask, refAudioPath, lessonName) {
+            selectedWordId = wordId;
+            selectedWordArabic = wordArabic;
+            selectedWordRule = ruleMask;
+
+            // Highlight selected word card
+            document.querySelectorAll('.word-card').forEach(card => {
+                if (card.querySelector('.word-card-arabic').innerText === wordArabic) {
+                    card.classList.add('active');
+                } else {
+                    card.classList.remove('active');
+                }
+            });
+
+            const studio = document.getElementById('tajweed-studio');
+            studio.style.display = 'block';
+            studio.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+            // Hide classic phrase selection
+            document.querySelector('.phrase-selection-box').style.display = 'none';
+
+            // Configure studio view for Progressive Curriculum
+            document.getElementById('studio-rule-category').innerText = `Level ${selectedLevelId}`;
+            document.getElementById('studio-rule-title').innerText = lessonName;
+            document.getElementById('studio-text-anchor').innerText = wordArabic;
+            document.getElementById('studio-target-sub').innerHTML = `Rule Tag: <span>${ruleMask.replace(/_/g, ' ')}</span>`;
+            
+            // Configure reference audio
+            document.querySelector('.reference-audio-box h5').innerText = "Listen to Teacher Reference:";
+            const refAudio = document.getElementById('reference-audio-player');
+            refAudio.src = `/${refAudioPath}`;
+            refAudio.load();
+
+            clearTajweedAudio();
+        }
+
+        // Unified Audio Controls
+        function switchTajweedTab(tabId) {
+            if (tabId === tajweedTab) return;
+            stopAllRecordings();
+            
+            tajweedTab = tabId;
+            document.getElementById('tajweed-tab-upload-btn').classList.toggle('active', tabId === 'upload');
+            document.getElementById('tajweed-tab-record-btn').classList.toggle('active', tabId === 'record');
+            
+            document.getElementById('tajweed-tab-upload').style.display = tabId === 'upload' ? 'block' : 'none';
+            document.getElementById('tajweed-tab-record').style.display = tabId === 'record' ? 'block' : 'none';
+            
+            clearTajweedAudio();
+        }
+
+        function stopAllRecordings() {
+            if (tajweedMediaRecorder && tajweedMediaRecorder.state === 'recording') {
+                tajweedMediaRecorder.stop();
+            }
+            if (tajweedAnimationFrameId) cancelAnimationFrame(tajweedAnimationFrameId);
+            if (tajweedAudioContext) tajweedAudioContext.close();
+        }
+
+        function handleTajweedFileSelect(event) {
+            const files = event.target.files;
+            if (files.length) {
+                const file = files[0];
+                tajweedAudioBlob = file;
+                tajweedAudioName = file.name;
+                showTajweedAudioPreview(file);
+            }
+        }
+
+        function showTajweedAudioPreview(blob) {
+            const previewZone = document.getElementById('tajweed-preview-zone');
+            const previewName = document.getElementById('tajweed-preview-name');
+            const previewSize = document.getElementById('tajweed-preview-size');
+            const audioPlayer = document.getElementById('tajweed-audio-player');
+            const evalBtn = document.getElementById('tajweed-eval-btn');
+            
+            previewName.innerText = tajweedAudioName;
+            const sizeInMB = (blob.size / (1024 * 1024)).toFixed(2);
+            previewSize.innerText = `${sizeInMB} MB`;
+            
+            audioPlayer.src = URL.createObjectURL(blob);
+            previewZone.style.display = 'flex';
+            evalBtn.removeAttribute('disabled');
+            
+            document.getElementById('tajweed-result-container').classList.remove('active');
+            document.getElementById('tajweed-error-panel').classList.remove('active');
+        }
+
+        function clearTajweedAudio() {
+            tajweedAudioBlob = null;
+            tajweedAudioName = '';
+            
+            const audioPlayer = document.getElementById('tajweed-audio-player');
+            audioPlayer.removeAttribute('src');
+            audioPlayer.load();
+            
+            document.getElementById('tajweed-preview-zone').style.display = 'none';
+            document.getElementById('tajweed-eval-btn').setAttribute('disabled', 'true');
+            
+            const fileInput = document.getElementById('tajweed-audio-file');
+            if (fileInput) fileInput.value = '';
+            
+            document.getElementById('tajweed-result-container').classList.remove('active');
+            document.getElementById('tajweed-error-panel').classList.remove('active');
+        }
+
+        async function toggleTajweedRecording() {
+            const recordBtn = document.getElementById('tajweed-record-btn');
+            const recordIcon = document.getElementById('tajweed-record-icon');
+            const statusText = document.getElementById('tajweed-record-status-text');
+            const statusContainer = document.getElementById('tajweed-record-status');
+            const canvasContainer = document.getElementById('tajweed-waveform-container');
+
+            if (tajweedMediaRecorder && tajweedMediaRecorder.state === 'recording') {
+                tajweedMediaRecorder.stop();
+                recordBtn.classList.remove('recording');
+                recordIcon.innerHTML = `<circle cx="8" cy="8" r="8"/>`;
+                statusText.innerText = "Processing recording clip...";
+                statusContainer.classList.remove('active');
+                canvasContainer.classList.remove('active');
+                
+                if (tajweedAnimationFrameId) cancelAnimationFrame(tajweedAnimationFrameId);
+                if (tajweedAudioContext) tajweedAudioContext.close();
+            } else {
+                tajweedAudioChunks = [];
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    tajweedMediaRecorder = new MediaRecorder(stream);
+                    tajweedMediaRecorder.ondataavailable = event => {
+                        tajweedAudioChunks.push(event.data);
+                    };
+                    tajweedMediaRecorder.onstop = () => {
+                        const audioBlob = new Blob(tajweedAudioChunks, { type: 'audio/wav' });
+                        tajweedAudioBlob = audioBlob;
+                        tajweedAudioName = `Tajweed_Recitation_${new Date().toISOString().slice(11,19).replace(/:/g, '-')}.wav`;
+                        showTajweedAudioPreview(audioBlob);
+                        statusText.innerText = "Recording captured. Ready for evaluation.";
+                    };
+                    
+                    tajweedAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const source = tajweedAudioContext.createMediaStreamSource(stream);
+                    tajweedAnalyser = tajweedAudioContext.createAnalyser();
+                    tajweedAnalyser.fftSize = 256;
+                    source.connect(tajweedAnalyser);
+                    
+                    canvasContainer.classList.add('active');
+                    visualizeTajweedWaveform();
+
+                    tajweedMediaRecorder.start();
+                    recordBtn.classList.add('recording');
+                    recordIcon.innerHTML = `<rect x="4" y="4" width="8" height="8" rx="1"/>`;
+                    statusText.innerText = "Recording recitation... Click to stop";
+                    statusContainer.classList.add('active');
+                    
+                    document.getElementById('tajweed-result-container').classList.remove('active');
+                    document.getElementById('tajweed-error-panel').classList.remove('active');
+                    document.getElementById('tajweed-preview-zone').style.display = 'none';
+                    document.getElementById('tajweed-eval-btn').setAttribute('disabled', 'true');
+                } catch (err) {
+                    showTajweedError("Microphone permission denied. Allow mic access or upload file.");
+                }
+            }
+        }
+
+        function visualizeTajweedWaveform() {
+            const canvas = document.getElementById('tajweed-waveform-canvas');
+            const canvasCtx = canvas.getContext('2d');
+            const bufferLength = tajweedAnalyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+
+            function draw() {
+                tajweedAnimationFrameId = requestAnimationFrame(draw);
+                tajweedAnalyser.getByteFrequencyData(dataArray);
+
+                canvasCtx.fillStyle = '#080B11';
+                canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+
+                const barWidth = (canvas.width / bufferLength) * 2.5;
+                let barHeight;
+                let x = 0;
+
+                for (let i = 0; i < bufferLength; i++) {
+                    barHeight = (dataArray[i] / 255) * canvas.height * 0.95;
+                    const y = (canvas.height - barHeight) / 2;
+                    const grad = canvasCtx.createLinearGradient(0, y, 0, y + barHeight);
+                    grad.addColorStop(0, '#C084FC');
+                    grad.addColorStop(1, '#E11D48');
+
+                    canvasCtx.fillStyle = grad;
+                    canvasCtx.fillRect(x, y, barWidth - 1, barHeight);
+                    x += barWidth;
+                }
+            }
+            draw();
+        }
+
+        async function submitTajweedEvalRequest() {
+            if (!tajweedAudioBlob) return;
+
+            const evalBtn = document.getElementById('tajweed-eval-btn');
+            const loader = document.getElementById('tajweed-loader');
+            const resultContainer = document.getElementById('tajweed-result-container');
+            const errorPanel = document.getElementById('tajweed-error-panel');
+
+            evalBtn.setAttribute('disabled', 'true');
+            loader.classList.add('active');
+            resultContainer.classList.remove('active');
+            errorPanel.classList.remove('active');
+
+            document.getElementById('fixit-panel').classList.remove('active');
+
+            if (activeDashboardMode === 'curriculum') {
+                // Progressive Curriculum Analyze Route
+                const formData = new FormData();
+                formData.append('word_id', selectedWordId);
+                formData.append('current_level', selectedLevelId);
+                formData.append('audio_blob', tajweedAudioBlob, tajweedAudioName);
+
+                try {
+                    const response = await fetch('/api/v1/tajweed/analyze', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await response.json();
+                    
+                    if (response.status === 200) {
+                        currentEvalData = data;
+                        renderCurriculumReport(data);
+                    } else {
+                        showTajweedError(data.detail || "Analysis failed. Check server console.");
+                    }
+                } catch (err) {
+                    showTajweedError("Network connection error. Ensure FastAPI server is running.");
+                } finally {
+                    loader.classList.remove('active');
+                    evalBtn.removeAttribute('disabled');
+                }
+            } else {
+                // Classic Rules Evaluate Route
+                const formData = new FormData();
+                formData.append('class_id', selectedClassId);
+                formData.append('phrase_index', selectedPhraseIndex);
+                formData.append('file', tajweedAudioBlob, tajweedAudioName);
+
+                try {
+                    const response = await fetch('/api/v1/tajweed/evaluate', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await response.json();
+                    
+                    if (response.status === 200) {
+                        document.getElementById('aligner-blocks-wrapper').style.display = 'none';
+                        renderTajweedEvaluationReport(data);
+                    } else {
+                        showTajweedError(data.detail || "Evaluation failed. Check backend console logs.");
+                    }
+                } catch (err) {
+                    showTajweedError("Network connection error. Ensure FastAPI server is running.");
+                } finally {
+                    loader.classList.remove('active');
+                    evalBtn.removeAttribute('disabled');
+                }
+            }
+        }
+
+        // Render Progressive Ingestion Alignment Report
+        function renderCurriculumReport(data) {
+            const resultContainer = document.getElementById('tajweed-result-container');
+            const badge = document.getElementById('tajweed-eval-status-badge');
+            const banner = document.getElementById('eval-banner-box');
+            const bannerIcon = document.getElementById('eval-status-icon');
+            const bannerTitle = document.getElementById('eval-status-title');
+            const bannerSubtitle = document.getElementById('eval-status-subtitle');
+            
+            document.getElementById('eval-detail-rule').innerText = data.rule_mask.replace(/_/g, ' ').toUpperCase();
+            
+            const isNotApplicable = data.status === 'NOT_APPLICABLE';
+            const evalPass = !isNotApplicable && data.evaluation.pass;
+            
+            if (isNotApplicable) {
+                badge.innerText = "Rule Locked";
+                badge.style.background = 'rgba(100, 116, 139, 0.1)';
+                badge.style.borderColor = 'rgba(100, 116, 139, 0.2)';
+                badge.style.color = '#94A3B8';
+                
+                banner.className = "eval-banner";
+                bannerIcon.innerText = "🔒";
+                bannerTitle.innerText = "Dynamic Masking: Rule Not Checked";
+                bannerSubtitle.innerText = data.message;
+                
+                document.getElementById('aligner-blocks-wrapper').style.display = 'none';
+                document.getElementById('eval-metric-duration-val').innerText = 'N/A';
+                document.getElementById('eval-metric-duration-bar').style.width = '0%';
+                document.getElementById('eval-metric-duration-sub').innerText = 'Rule not learned up to current level';
+                document.getElementById('eval-metric-spectral-wrapper').style.display = 'none';
+            } else {
+                // Aligned Blocks rendering
+                document.getElementById('aligner-blocks-wrapper').style.display = 'block';
+                const blocksContainer = document.getElementById('aligner-blocks-container');
+                blocksContainer.innerHTML = '';
+                
+                const segments = data.alignment_segments || [];
+                segments.forEach(seg => {
+                    const block = document.createElement('div');
+                    
+                    // Identify if this segment is passed/failed/neutral
+                    let statusClass = 'neutral';
+                    
+                    if (data.evaluation.pass) {
+                        statusClass = 'passed';
+                    } else {
+                        // Mark failed characters in red
+                        const failedConsonants = new Set(['q', 't', 'b', 'j', 'd', 'n', 'm']);
+                        const vowels = new Set(['a', 'i', 'u', 'e', 'o', 'y', '\'']);
+                        
+                        if (data.rule_mask === 'qalqalah_with_sukoon' && failedConsonants.has(seg.char)) {
+                            statusClass = 'failed';
+                        } else if (data.rule_mask === 'ghunnah' && failedConsonants.has(seg.char)) {
+                            statusClass = 'failed';
+                        } else if ((data.rule_mask.includes('madd') || data.rule_mask === 'muqattaat') && vowels.has(seg.char)) {
+                            statusClass = 'failed';
+                        } else if (data.rule_mask === 'single_letter' || data.rule_mask === 'compound_letter') {
+                            if (seg === segments[segments.length - 1]) {
+                                statusClass = 'failed';
+                            }
+                        } else if (seg === segments[segments.length - 1]) {
+                            statusClass = 'failed';
+                        }
+                    }
+                    
+                    block.className = `char-block ${statusClass}`;
+                    block.innerHTML = `
+                        <div class="char-block-letter">${seg.char}</div>
+                        <div class="char-block-time">${seg.start.toFixed(2)}s</div>
+                    `;
+                    
+                    if (statusClass === 'failed') {
+                        block.title = "Click to focus & resolve pronunciation";
+                        block.onclick = () => selectFailedSegment(seg);
+                    }
+                    
+                    blocksContainer.appendChild(block);
+                });
+
+                if (evalPass) {
+                    badge.innerText = "Evaluation Passed";
+                    badge.style.background = 'rgba(16, 185, 129, 0.1)';
+                    badge.style.borderColor = 'rgba(16, 185, 129, 0.2)';
+                    badge.style.color = '#10B981';
+                    
+                    banner.className = "eval-banner";
+                    bannerIcon.innerText = "✅";
+                    bannerTitle.innerText = "Pronunciation Compliant!";
+                    bannerSubtitle.innerText = "Excellent. Forced-alignment character boundaries and acoustic parameters meet Tajweed rules.";
+                } else {
+                    badge.innerText = "Evaluation Failed";
+                    badge.style.background = 'rgba(239, 68, 68, 0.1)';
+                    badge.style.borderColor = 'rgba(239, 68, 68, 0.2)';
+                    badge.style.color = '#EF4444';
+                    
+                    banner.className = "eval-banner fail";
+                    bannerIcon.innerText = "❌";
+                    bannerTitle.innerText = "Pronunciation Non-Compliant";
+                    bannerSubtitle.innerText = `variation detected in target features. Click the red block above to open the Fix-It focus assistant.`;
+                }
+
+                // Render metrics progress bar
+                const metrics = data.evaluation.metrics || {};
+                const details = data.evaluation.details || {};
+                
+                // Duration filling
+                const durVal = metrics.measured_duration_seconds || metrics.duration_seconds || 0.0;
+                document.getElementById('eval-metric-duration-val').innerText = durVal ? `${durVal.toFixed(2)}s` : 'N/A';
+                
+                const expectedMin = details.expected_duration_seconds || 0.4;
+                const percentDur = Math.min(100, (durVal / expectedMin) * 100);
+                const durBar = document.getElementById('eval-metric-duration-bar');
+                durBar.style.width = `${percentDur}%`;
+                durBar.style.background = evalPass ? 'linear-gradient(90deg, var(--accent-blue), var(--success))' : 'linear-gradient(90deg, var(--accent-blue), var(--danger))';
+                document.getElementById('eval-metric-duration-sub').innerText = `Expected Duration: >= ${expectedMin}s. Status: ${details.status || 'evaluated'}`;
+
+                // Spectral/nasal details filling
+                const specWrapper = document.getElementById('eval-metric-spectral-wrapper');
+                specWrapper.style.display = 'block';
+                
+                const label = document.getElementById('eval-metric-spectral-label');
+                const val = document.getElementById('eval-metric-spectral-val');
+                const bar = document.getElementById('eval-metric-spectral-bar');
+                const sub = document.getElementById('eval-metric-spectral-sub');
+                
+                bar.style.width = '0%';
+                bar.style.background = evalPass ? 'linear-gradient(90deg, var(--accent-blue), var(--success))' : 'linear-gradient(90deg, var(--accent-blue), var(--danger))';
+
+                if (data.rule_mask === 'qalqalah_with_sukoon') {
+                    label.innerText = 'Qalqalah Echo Bounce Ratio';
+                    const bounceRatio = metrics.ratio || 0.0;
+                    val.innerText = `${(bounceRatio * 100).toFixed(0)}%`;
+                    sub.innerText = `Expected Range: 20% - 40%. Occlusion duration: ${metrics.drop_duration_ms ? metrics.drop_duration_ms.toFixed(1) : 0}ms`;
+                    setTimeout(() => { bar.style.width = `${Math.min(100, (bounceRatio / 0.4) * 100)}%`; }, 100);
+                } else if (data.rule_mask === 'ghunnah') {
+                    label.innerText = 'Nasalization Ratio';
+                    const nasalRatio = metrics.average_nasal_ratio || 0.0;
+                    val.innerText = `${(nasalRatio * 100).toFixed(1)}%`;
+                    sub.innerText = `Expected ratio: >= 65% sustained for >= 800ms. Measured: ${metrics.sustained_duration_seconds || 0}s`;
+                    setTimeout(() => { bar.style.width = `${Math.min(100, (nasalRatio / 0.8) * 100)}%`; }, 100);
+                } else if (data.rule_mask.includes('madd')) {
+                    label.innerText = 'Pitch Contour Stability (F0 Coeff)';
+                    const stability = metrics.pitch_stability_index || 0.0;
+                    val.innerText = stability ? `${(stability * 100).toFixed(1)}%` : 'N/A';
+                    sub.innerText = `Expected pitch variance: <= 15%. Contour: ${details.pitch_contour || 'unknown'}`;
+                    setTimeout(() => { bar.style.width = `${Math.min(100, (0.15 / (stability || 0.01)) * 50)}%`; }, 100);
+                } else {
+                    label.innerText = 'Trailing Stop RMS Decay';
+                    const trailingRMS = metrics.trailing_rms_db || -100.0;
+                    val.innerText = `${trailingRMS.toFixed(1)} dB`;
+                    sub.innerText = `Expected trailing energy: < -45 dB (silence/breath check)`;
+                    setTimeout(() => { bar.style.width = `${Math.min(100, Math.max(10, (100 + trailingRMS) / 55 * 100))}%`; }, 100);
+                }
+            }
+
+            resultContainer.classList.add('active');
+            resultContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // Render classic Tajweed report (fallback)
+        function renderTajweedEvaluationReport(report) {
+            const resultContainer = document.getElementById('tajweed-result-container');
+            const badge = document.getElementById('tajweed-eval-status-badge');
+            const banner = document.getElementById('eval-banner-box');
+            const bannerIcon = document.getElementById('eval-status-icon');
+            const bannerTitle = document.getElementById('eval-status-title');
+            const bannerSubtitle = document.getElementById('eval-status-subtitle');
+            
+            const ruleName = report.rule_name;
+            document.getElementById('eval-detail-rule').innerText = ruleName;
+            
+            if (report.overall_pass) {
+                badge.innerText = "Recitation Compliant";
+                badge.style.background = 'rgba(16, 185, 129, 0.1)';
+                badge.style.borderColor = 'rgba(16, 185, 129, 0.2)';
+                badge.style.color = '#10B981';
+                
+                banner.className = "eval-banner";
+                bannerIcon.innerText = "✅";
+                bannerTitle.innerText = "Pronunciation Compliant!";
+                bannerSubtitle.innerText = "Excellent recitation. Active timing and frequency bands are mathematically within target profile guidelines.";
+                
+                document.getElementById('eval-mistakes-box').style.display = 'none';
+            } else {
+                badge.innerText = "Rule Non-Compliant";
+                badge.style.background = 'rgba(239, 68, 68, 0.1)';
+                badge.style.borderColor = 'rgba(239, 68, 68, 0.2)';
+                badge.style.color = '#EF4444';
+                
+                banner.className = "eval-banner fail";
+                bannerIcon.innerText = "❌";
+                bannerTitle.innerText = "Recitation Non-Compliant";
+                bannerSubtitle.innerText = "Acoustic variations detected outside expected tolerances. Review mistakes.";
+                
+                const list = document.getElementById('eval-mistakes-list');
+                list.innerHTML = '';
+                const mistakes = report.pedagogical.common_beginner_mistakes || [];
+                mistakes.forEach(m => {
+                    const li = document.createElement('li');
+                    li.innerText = m;
+                    list.appendChild(li);
+                });
+                document.getElementById('eval-mistakes-box').style.display = 'block';
+            }
+
+            const dur = report.details.duration || {};
+            const durVal = report.metrics.active_duration_seconds || 0.0;
+            document.getElementById('eval-metric-duration-val').innerText = `${durVal.toFixed(2)}s`;
+            
+            const durBar = document.getElementById('eval-metric-duration-bar');
+            const durSub = document.getElementById('eval-metric-duration-sub');
+            durSub.innerText = `Expected: >= ${dur.expected_minimum || 0}s (tolerance: ${dur.tolerance || 0}s)`;
+            
+            const percentDur = Math.min(100, (durVal / (dur.expected_minimum || 1.0)) * 100);
+            durBar.style.width = '0%';
+            durBar.style.background = dur.pass ? 'linear-gradient(90deg, var(--accent-blue), var(--success))' : 'linear-gradient(90deg, var(--accent-blue), var(--danger))';
+            
+            const spec = report.details.spectral || {};
+            const specWrapper = document.getElementById('eval-metric-spectral-wrapper');
+            
+            if (spec.expected_state) {
+                specWrapper.style.display = 'block';
+                const label = document.getElementById('eval-metric-spectral-label');
+                const val = document.getElementById('eval-metric-spectral-val');
+                const bar = document.getElementById('eval-metric-spectral-bar');
+                const sub = document.getElementById('eval-metric-spectral-sub');
+                
+                bar.style.width = '0%';
+                bar.style.background = spec.pass ? 'linear-gradient(90deg, var(--accent-blue), var(--success))' : 'linear-gradient(90deg, var(--accent-blue), var(--danger))';
+                
+                if (spec.expected_state === 'heavy_retracted_tongue_root') {
+                    label.innerText = 'Spectral Centroid Retraction (Tafkhim)';
+                    const measuredCentroid = report.metrics.spectral_centroid_hz;
+                    val.innerText = `${measuredCentroid.toFixed(0)} Hz`;
+                    sub.innerText = `Expected Ceiling: <= ${spec.centroid_ceiling_hz} Hz`;
+                    const percentSpec = Math.min(100, Math.max(10, (spec.centroid_ceiling_hz / (measuredCentroid || 1.0)) * 50));
+                    setTimeout(() => { bar.style.width = `${percentSpec}%`; }, 100);
+                } else if (spec.expected_state === 'nasal_resonance') {
+                    label.innerText = 'Nasal Resonance Ratio (Ghunnah)';
+                    const ratio = report.metrics.nasal_resonance_ratio;
+                    val.innerText = `${(ratio * 100).toFixed(2)}%`;
+                    sub.innerText = `Expected Minimum Ratio: >= 1.50%`;
+                    const percentSpec = Math.min(100, (ratio / 0.03) * 100);
+                    setTimeout(() => { bar.style.width = `${percentSpec}%`; }, 100);
+                } else {
+                    label.innerText = 'Spectral Centroid frequency';
+                    const measuredCentroid = report.metrics.spectral_centroid_hz;
+                    val.innerText = `${measuredCentroid.toFixed(0)} Hz`;
+                    sub.innerText = `Standard centroid checks`;
+                    setTimeout(() => { bar.style.width = `80%`; }, 100);
+                }
+            } else {
+                specWrapper.style.display = 'none';
+            }
+
+            resultContainer.classList.add('active');
+            resultContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            
+            setTimeout(() => {
+                durBar.style.width = `${percentDur}%`;
+            }, 50);
+        }
+
+        // 3. Fix-It Interactive State Machine (ISOLATED_FOCUS -> MICRO_RECORDING -> PROCESSING_INVERSION)
+        function selectFailedSegment(seg) {
+            activeFailedSegment = seg;
+            
+            // Highlight focused block in DOM
+            document.querySelectorAll('.char-block').forEach(block => {
+                if (block.querySelector('.char-block-letter').innerText === seg.char) {
+                    block.classList.add('focused');
+                } else {
+                    block.classList.remove('focused');
+                }
+            });
+
+            // Enforce focus state UI text
+            document.getElementById('fixit-focused-char').innerText = `'${seg.char.toUpperCase()}'`;
+            const desc = document.getElementById('fixit-instruction-desc');
+            const anatLabel = document.getElementById('anatomical-label-text');
+
+            // Reset anatomical active regions
+            document.querySelectorAll('.vocal-part').forEach(part => part.classList.remove('active'));
+
+            // Map character to anatomical vocal region SVG path IDs
+            const throatChars = new Set(['h', 'x', 'c', 'g', 'e', 'a', '\'']);
+            const lipChars = new Set(['f', 'w', 'b', 'm']);
+            const nasalRules = new Set(['ghunnah']);
+            const maddRules = new Set(['madd', 'shaddah_with_madd', 'muqattaat']);
+
+            let activePartId = '';
+            if (nasalRules.has(selectedWordRule)) {
+                activePartId = 'part-khayshum';
+                desc.innerText = "Nasal hum resonance duration was too short. Perform a sustained nasal buzz from the nose cavity.";
+                anatLabel.innerText = "Al-Khayshum (Nasal)";
+            } else if (throatChars.has(seg.char)) {
+                activePartId = 'part-halq';
+                desc.innerText = "Throat articulation error. Make sure to emit this letter directly from the vocal tract region.";
+                anatLabel.innerText = "Al-Halq (Throat)";
+            } else if (lipChars.has(seg.char)) {
+                activePartId = 'part-shafatayn';
+                desc.innerText = "Lip articulation error. Ensure proper lip closure or rounding to complete the phone envelope.";
+                anatLabel.innerText = "Al-Shafatayn (Lips)";
+            } else if (maddRules.has(selectedWordRule)) {
+                activePartId = 'part-jawf';
+                desc.innerText = "Vowel elongation duration or pitch was unstable. Maintain constant vowel air flow count.";
+                anatLabel.innerText = "Al-Jawf (Cavity)";
+            } else {
+                // Tongue consonants
+                activePartId = 'part-lisan';
+                desc.innerText = "Tongue occlusion error. Position the tongue tip or body properly against the palate target.";
+                anatLabel.innerText = "Al-Lisan (Tongue)";
+            }
+
+            if (activePartId) {
+                const el = document.getElementById(activePartId);
+                if (el) el.classList.add('active');
+            }
+
+            // Open the Fix-It panel
+            const panel = document.getElementById('fixit-panel');
+            panel.classList.add('active');
+            panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        async function toggleFixitRecording() {
+            const btn = document.getElementById('fixit-punch-in-btn');
+            const statusDiv = document.getElementById('fixit-record-status');
+
+            if (fixitMediaRecorder && fixitMediaRecorder.state === 'recording') {
+                fixitMediaRecorder.stop();
+                btn.classList.remove('recording');
+                btn.innerText = "⌛ Swapping buffer and re-evaluating...";
+                btn.setAttribute('disabled', 'true');
+            } else {
+                fixitAudioChunks = [];
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    fixitMediaRecorder = new MediaRecorder(stream);
+                    fixitMediaRecorder.ondataavailable = event => {
+                        fixitAudioChunks.push(event.data);
+                    };
+                    fixitMediaRecorder.onstop = async () => {
+                        const audioBlob = new Blob(fixitAudioChunks, { type: 'audio/wav' });
+                        statusDiv.style.display = 'none';
+                        
+                        // Enforce PROCESSING_INVERSION: Resubmit new micro-punch-in
+                        await submitFixitPunchIn(audioBlob);
+                    };
+
+                    fixitMediaRecorder.start();
+                    btn.classList.add('recording');
+                    btn.innerText = "⏹️ Stop Micro Recording";
+                    statusDiv.innerText = "Recording micro punch-in... speak the focused letter!";
+                    statusDiv.style.display = 'block';
+                } catch (err) {
+                    alert("Microphone permission denied. Cannot record micro-punch-in.");
+                }
+            }
+        }
+
+        async function submitFixitPunchIn(blob) {
+            const btn = document.getElementById('fixit-punch-in-btn');
+            
+            const formData = new FormData();
+            formData.append('word_id', selectedWordId);
+            formData.append('current_level', selectedLevelId);
+            formData.append('audio_blob', blob, `MicroPunch_${selectedWordId}_${activeFailedSegment.char}.wav`);
+
+            try {
+                const response = await fetch('/api/v1/tajweed/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                if (response.status === 200) {
+                    // Update main eval data cache
+                    currentEvalData = data;
+                    
+                    if (data.evaluation.pass) {
+                        // RESOLVED_SUCCESS
+                        btn.innerText = "✅ Resolved Successfully!";
+                        btn.className = "btn btn-punch-in";
+                        btn.style.background = 'var(--success)';
+                        btn.removeAttribute('disabled');
+                        
+                        // Play alert sound or trigger green rendering
+                        setTimeout(() => {
+                            btn.innerText = "🎙️ Record Micro Correction";
+                            btn.style.background = '';
+                            document.getElementById('fixit-panel').classList.remove('active');
+                        }, 2000);
+                    } else {
+                        btn.innerText = "🎙️ Record Micro Correction";
+                        btn.removeAttribute('disabled');
+                    }
+                    
+                    // Re-render report
+                    renderCurriculumReport(data);
+                } else {
+                    alert(data.detail || "Punch-in failed. Try again.");
+                    btn.innerText = "🎙️ Record Micro Correction";
+                    btn.removeAttribute('disabled');
+                }
+            } catch (err) {
+                alert("Network error submitting micro-punch-in.");
+                btn.innerText = "🎙️ Record Micro Correction";
+                btn.removeAttribute('disabled');
+            }
+        }
+
+        function showTajweedError(msg) {
+            const errorPanel = document.getElementById('tajweed-error-panel');
+            document.getElementById('tajweed-error-message').innerText = msg;
+            errorPanel.classList.add('active');
+            errorPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // Teacher Reference Recording Logic
+        let teacherModeActive = false;
+        let teacherMediaRecorder = null;
+        let teacherAudioChunks = [];
+        let teacherRecordedBlob = null;
+
+        function toggleTeacherMode() {
+            teacherModeActive = !teacherModeActive;
+            const btn = document.getElementById('toggle-teacher-mode-btn');
+            const panel = document.getElementById('teacher-record-panel');
+            
+            if (teacherModeActive) {
+                btn.innerText = "🔒 Disable Teacher Recording";
+                panel.style.display = 'block';
+            } else {
+                btn.innerText = "🛠️ Enable Teacher Recording";
+                panel.style.display = 'none';
+                stopTeacherReferenceRecording();
+                resetTeacherRecorderUI();
+            }
+        }
+
+        function resetTeacherRecorderUI() {
+            const recBtn = document.getElementById('teacher-record-btn');
+            const saveBtn = document.getElementById('teacher-save-btn');
+            const statusLabel = document.getElementById('teacher-record-status-label');
+            const preview = document.getElementById('teacher-preview-player');
+            
+            recBtn.innerText = "🎙️ Record Reference";
+            recBtn.style.background = 'linear-gradient(135deg, var(--accent-purple), var(--accent-blue))';
+            saveBtn.style.display = 'none';
+            statusLabel.innerText = "Click to record reference audio for this word.";
+            preview.style.display = 'none';
+            preview.src = '';
+            teacherRecordedBlob = null;
+        }
+
+        async function toggleTeacherReferenceRecording() {
+            const recBtn = document.getElementById('teacher-record-btn');
+            const saveBtn = document.getElementById('teacher-save-btn');
+            const statusLabel = document.getElementById('teacher-record-status-label');
+            const preview = document.getElementById('teacher-preview-player');
+
+            if (teacherMediaRecorder && teacherMediaRecorder.state === 'recording') {
+                teacherMediaRecorder.stop();
+                recBtn.innerText = "⌛ Processing...";
+            } else {
+                teacherAudioChunks = [];
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    teacherMediaRecorder = new MediaRecorder(stream);
+                    teacherMediaRecorder.ondataavailable = event => {
+                        teacherAudioChunks.push(event.data);
+                    };
+                    teacherMediaRecorder.onstop = () => {
+                        const blob = new Blob(teacherAudioChunks, { type: 'audio/wav' });
+                        teacherRecordedBlob = blob;
+                        
+                        preview.src = URL.createObjectURL(blob);
+                        preview.style.display = 'block';
+                        preview.load();
+                        
+                        recBtn.innerText = "🎙️ Record Again";
+                        recBtn.style.background = '';
+                        saveBtn.style.display = 'inline-block';
+                        statusLabel.innerText = "Recording captured. Listen to preview or click Save.";
+                    };
+                    
+                    teacherMediaRecorder.start();
+                    recBtn.innerText = "⏹️ Stop Recording";
+                    recBtn.style.background = '#EF4444';
+                    saveBtn.style.display = 'none';
+                    statusLabel.innerText = "Recording custom reference audio... speak clearly!";
+                    preview.style.display = 'none';
+                } catch (err) {
+                    alert("Microphone permission denied. Cannot record reference audio.");
+                }
+            }
+        }
+
+        function stopTeacherReferenceRecording() {
+            if (teacherMediaRecorder && teacherMediaRecorder.state === 'recording') {
+                teacherMediaRecorder.stop();
+            }
+        }
+
+        async function saveTeacherReference() {
+            if (!teacherRecordedBlob) return;
+            if (!selectedWordId || !selectedLevelId) {
+                alert("Please select a Qaida level card and a practice word first.");
+                return;
+            }
+
+            const saveBtn = document.getElementById('teacher-save-btn');
+            const recBtn = document.getElementById('teacher-record-btn');
+            const statusLabel = document.getElementById('teacher-record-status-label');
+
+            saveBtn.setAttribute('disabled', 'true');
+            saveBtn.innerText = "⌛ Saving...";
+            recBtn.setAttribute('disabled', 'true');
+
+            const formData = new FormData();
+            formData.append('word_id', selectedWordId);
+            formData.append('current_level', selectedLevelId);
+            formData.append('audio_file', teacherRecordedBlob, `${selectedWordId}_reference.wav`);
+
+            try {
+                const response = await fetch('/api/v1/qaida/upload_reference', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                if (response.status === 200) {
+                    statusLabel.innerText = "✅ Saved successfully to server!";
+                    statusLabel.style.color = '#10B981';
+                    
+                    // Reload reference player
+                    const refAudio = document.getElementById('reference-audio-player');
+                    refAudio.src = `/${data.reference_audio_path}?t=${new Date().getTime()}`; // cache bust
+                    refAudio.load();
+                    
+                    setTimeout(() => {
+                        statusLabel.style.color = '';
+                        resetTeacherRecorderUI();
+                        saveBtn.removeAttribute('disabled');
+                        recBtn.removeAttribute('disabled');
+                    }, 2000);
+                } else {
+                    alert(data.detail || "Upload failed. Check backend console.");
+                    saveBtn.removeAttribute('disabled');
+                    saveBtn.innerText = "💾 Save as Reference";
+                    recBtn.removeAttribute('disabled');
+                }
+            } catch (err) {
+                alert("Network error occurred while saving reference audio.");
+                saveBtn.removeAttribute('disabled');
+                saveBtn.innerText = "💾 Save as Reference";
+                recBtn.removeAttribute('disabled');
+            }
+        }
+    </script>
+</body>
+</html>
