@@ -331,3 +331,7 @@ Itqān/
   - **Status**: Completed successfully. Converted and trimmed 423 files to standard 16kHz mono WAV format and deleted original MP3 files.
 - **2026-07-11 18:54**: Ran `organize_processed.py` to partition files.
   - **Status**: Completed successfully. Moved 202 files to `baseline`, 211 files to `deep`, and 212 files to `high`. Cleaned up temporary files.
+- **2026-07-11 19:19**: Ran `normalize_all_audio.py` to perform amplitude normalization (Peak Normalization to max 1.0) on all 625 files in-place.
+  - **Status**: Completed successfully (625 successes, 0 failures).
+- **2026-07-11 19:42**: Ran optimized `extract_features_and_diagnostics.py` script.
+  - **Status**: Completed successfully. Extracted 768-dimensional HuBERT speaker identity embeddings and DSP vocal diagnostics (F0 bounds, HNR, Jitter, Shimmer) for all 625 files, compiled [master_vector_matrix.json](file:///c:/Users/manaa/Documents/appagent/Itq%C4%81n/matcher/data/master_vector_matrix.json) (~14MB), and pushed all assets to GitHub.
