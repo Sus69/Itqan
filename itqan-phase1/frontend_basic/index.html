@@ -1,12 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Itqān — Qari Voice Matcher Prototype</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
     <style>
         :root {
             --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
@@ -88,7 +91,8 @@
             border: 1px solid transparent;
         }
 
-        .nav-btn:hover, .nav-btn.active {
+        .nav-btn:hover,
+        .nav-btn.active {
             color: #ffffff;
             background: rgba(99, 102, 241, 0.2);
             border-color: rgba(99, 102, 241, 0.4);
@@ -279,7 +283,8 @@
             background: #64748b;
         }
 
-        .btn-rec:disabled, .btn-stop:disabled {
+        .btn-rec:disabled,
+        .btn-stop:disabled {
             opacity: 0.4;
             cursor: not-allowed;
         }
@@ -332,7 +337,9 @@
         }
 
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         .results-section {
@@ -365,7 +372,9 @@
             background: rgba(16, 185, 129, 0.08);
         }
 
-        .qari-info { flex-grow: 1; }
+        .qari-info {
+            flex-grow: 1;
+        }
 
         .qari-rank {
             font-size: 0.75rem;
@@ -376,7 +385,9 @@
             margin-bottom: 0.2rem;
         }
 
-        .match-card.top-1 .qari-rank { color: var(--emerald); }
+        .match-card.top-1 .qari-rank {
+            color: var(--emerald);
+        }
 
         .qari-name {
             font-size: 1.1rem;
@@ -395,7 +406,9 @@
             color: var(--primary);
         }
 
-        .match-card.top-1 .confidence-val { color: var(--emerald); }
+        .match-card.top-1 .confidence-val {
+            color: var(--emerald);
+        }
 
         .progress-bar-bg {
             width: 100%;
@@ -413,7 +426,9 @@
             transition: width 0.6s ease;
         }
 
-        .match-card.top-1 .progress-bar-fill { background: var(--emerald); }
+        .match-card.top-1 .progress-bar-fill {
+            background: var(--emerald);
+        }
 
         .raw-json-toggle {
             margin-top: 1.5rem;
@@ -453,288 +468,351 @@
             font-size: 0.9rem;
             display: none;
         }
+    </style>
+</head>
 <body>
 
-<!-- Top Navigation Header -->
-<header class="top-nav">
-    <a href="index.html" class="brand-logo">
-        <span class="arabic" style="font-family:'Amiri',serif; color:#818cf8; font-size:1.7rem;">إتقان</span>
-        <span>Itqān Architecture</span>
-    </a>
-    <nav class="nav-links">
-        <a href="index.html" class="nav-btn active">🎙️ Voice Qari Matcher</a>
-        <a href="tajweed.html" class="nav-btn">📖 Tajweed Learning Portal</a>
-    </nav>
-</header>
+    <!-- Top Navigation Header -->
+    <header class="top-nav">
+        <a href="index.html" class="brand-logo">
+            <span class="arabic" style="font-family:'Amiri',serif; color:#818cf8; font-size:1.7rem;">إتقان</span>
+            <span>Itqān Architecture</span>
+        </a>
+        <nav class="nav-links">
+            <a href="index.html" class="nav-btn active">🎙️ Voice Qari Matcher</a>
+            <a href="tajweed.html" class="nav-btn">📖 Tajweed Learning Portal</a>
+        </nav>
+    </header>
 
-<div class="container">
-    <div class="header">
-        <span class="badge">Phase 1 USP Core</span>
-        <h1>Qari Voice Matcher</h1>
-        <p class="subtitle">Upload or record live audio to find matching master Qaris.</p>
-    </div>
-
-    <!-- Mode Selector Tabs -->
-    <div class="tab-switcher">
-        <button type="button" class="tab-btn active" id="tabUpload">📁 Upload Audio File</button>
-        <button type="button" class="tab-btn" id="tabRecord">🎙️ Record Live Microphone</button>
-    </div>
-
-    <form id="matcherForm">
-        <!-- Upload Mode Section -->
-        <div id="uploadSection">
-            <div class="upload-card">
-                <div class="upload-icon">📁</div>
-                <p id="uploadPrompt" style="font-weight: 500;">Click or drop audio file here</p>
-                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.3rem;">Supports all formats (.wav, .mp3, .m4a, .ogg, .flac, .webm, etc.)</p>
-                <div class="file-info" id="fileInfo"></div>
-                <input type="file" id="audioInput" accept="audio/*,.wav,.mp3,.m4a,.ogg,.flac,.webm,.aac,.opus,.wma">
-            </div>
+    <div class="container">
+        <div class="header">
+            <span class="badge">Phase 1 USP Core</span>
+            <h1>Qari Voice Matcher</h1>
+            <p class="subtitle">Upload or record live audio to find matching master Qaris.</p>
         </div>
 
-        <!-- Record Mode Section -->
-        <div id="recordSection" style="display: none;">
-            <div class="recorder-card">
-                <div class="rec-status" id="recStatus">Ready to Record</div>
-                <div class="rec-timer" id="recTimer">00:00</div>
-                <div class="rec-controls">
-                    <button type="button" class="btn-rec" id="startRecBtn">🔴 Start Recording</button>
-                    <button type="button" class="btn-stop" id="stopRecBtn" disabled>⏹️ Stop</button>
+        <!-- Mode Selector Tabs -->
+        <div class="tab-switcher">
+            <button type="button" class="tab-btn active" id="tabUpload">📁 Upload Audio File</button>
+            <button type="button" class="tab-btn" id="tabRecord">🎙️ Record Live Microphone</button>
+        </div>
+
+        <form id="matcherForm">
+            <!-- Upload Mode Section -->
+            <div id="uploadSection">
+                <div class="upload-card">
+                    <div class="upload-icon">📁</div>
+                    <p id="uploadPrompt" style="font-weight: 500;">Click or drop audio file here</p>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.3rem;">Supports all formats (.wav, .mp3, .m4a, .ogg, .flac, .webm, etc.)</p>
+                    <div class="file-info" id="fileInfo"></div>
+                    <input type="file" id="audioInput" accept="audio/*,.wav,.mp3,.m4a,.ogg,.flac,.webm,.aac,.opus,.wma">
                 </div>
             </div>
-        </div>
 
-        <audio id="audioPreview" class="audio-preview" controls></audio>
-
-        <button type="submit" class="btn-submit" id="submitBtn" style="margin-top: 1.2rem;" disabled>
-            <span class="spinner" id="spinner"></span>
-            <span id="btnText">Match Voice Print</span>
-        </button>
-    </form>
-
-    <div class="error-banner" id="errorBanner"></div>
-
-    <div class="results-section" id="resultsSection">
-        <div class="results-header">✨ Top 3 Reciter Matches</div>
-        <div id="matchesContainer"></div>
-
-        <span class="raw-json-toggle" id="jsonToggle">▶ Show Raw JSON Response</span>
-        <pre class="json-dump" id="jsonDump"></pre>
-    </div>
-</div>
-
-<script>
-    const form = document.getElementById('matcherForm');
-    const tabUpload = document.getElementById('tabUpload');
-    const tabRecord = document.getElementById('tabRecord');
-    const uploadSection = document.getElementById('uploadSection');
-    const recordSection = document.getElementById('recordSection');
-    const audioInput = document.getElementById('audioInput');
-    const fileInfo = document.getElementById('fileInfo');
-    const uploadPrompt = document.getElementById('uploadPrompt');
-    const startRecBtn = document.getElementById('startRecBtn');
-    const stopRecBtn = document.getElementById('stopRecBtn');
-    const recStatus = document.getElementById('recStatus');
-    const recTimer = document.getElementById('recTimer');
-    const audioPreview = document.getElementById('audioPreview');
-    const submitBtn = document.getElementById('submitBtn');
-    const btnText = document.getElementById('btnText');
-    const spinner = document.getElementById('spinner');
-    const resultsSection = document.getElementById('resultsSection');
-    const matchesContainer = document.getElementById('matchesContainer');
-    const jsonDump = document.getElementById('jsonDump');
-    const jsonToggle = document.getElementById('jsonToggle');
-    const errorBanner = document.getElementById('errorBanner');
-
-    const API_URL = 'http://localhost:8000/api/v1/matcher/recommend';
-
-    let activeTab = 'upload';
-    let mediaRecorder;
-    let audioChunks = [];
-    let recordedBlob = null;
-    let timerInterval;
-    let secondsRecorded = 0;
-
-    // Tab Switching
-    tabUpload.addEventListener('click', () => {
-        activeTab = 'upload';
-        tabUpload.classList.add('active');
-        tabRecord.classList.remove('active');
-        uploadSection.style.display = 'block';
-        recordSection.style.display = 'none';
-        checkSubmitReady();
-    });
-
-    tabRecord.addEventListener('click', () => {
-        activeTab = 'record';
-        tabRecord.classList.add('active');
-        tabUpload.classList.remove('active');
-        recordSection.style.display = 'block';
-        uploadSection.style.display = 'none';
-        checkSubmitReady();
-    });
-
-    // File Selection
-    audioInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            fileInfo.textContent = `Selected: ${file.name} (${(file.size / (1024 * 1024)).toFixed(2)} MB)`;
-            uploadPrompt.style.display = 'none';
-            audioPreview.src = URL.createObjectURL(file);
-            audioPreview.style.display = 'block';
-            checkSubmitReady();
-        }
-    });
-
-    // Live Recording
-    startRecBtn.addEventListener('click', async () => {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorder = new MediaRecorder(stream);
-            audioChunks = [];
-
-            mediaRecorder.ondataavailable = (e) => {
-                if (e.data.size > 0) audioChunks.push(e.data);
-            };
-
-            mediaRecorder.onstop = () => {
-                recordedBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                audioPreview.src = URL.createObjectURL(recordedBlob);
-                audioPreview.style.display = 'block';
-                recStatus.textContent = '✓ Recording Captured';
-                recStatus.style.color = 'var(--emerald)';
-                checkSubmitReady();
-            };
-
-            mediaRecorder.start();
-            secondsRecorded = 0;
-            recTimer.textContent = '00:00';
-            timerInterval = setInterval(() => {
-                secondsRecorded++;
-                const mins = String(Math.floor(secondsRecorded / 60)).padStart(2, '0');
-                const secs = String(secondsRecorded % 60).padStart(2, '0');
-                recTimer.textContent = `${mins}:${secs}`;
-            }, 1000);
-
-            startRecBtn.disabled = true;
-            stopRecBtn.disabled = false;
-            recStatus.textContent = '🎙️ Recording Live Audio...';
-            recStatus.style.color = 'var(--rose)';
-        } catch (err) {
-            alert('Microphone access error: ' + err.message);
-        }
-    });
-
-    stopRecBtn.addEventListener('click', () => {
-        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-            mediaRecorder.stop();
-            mediaRecorder.stream.getTracks().forEach(track => track.stop());
-            clearInterval(timerInterval);
-            startRecBtn.disabled = false;
-            stopRecBtn.disabled = true;
-        }
-    });
-
-    function checkSubmitReady() {
-        if (activeTab === 'upload' && audioInput.files[0]) {
-            submitBtn.disabled = false;
-        } else if (activeTab === 'record' && recordedBlob) {
-            submitBtn.disabled = false;
-        } else {
-            submitBtn.disabled = true;
-        }
-    }
-
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        let fileToSend;
-        if (activeTab === 'upload') {
-            fileToSend = audioInput.files[0];
-        } else {
-            if (!recordedBlob) return;
-            fileToSend = new File([recordedBlob], 'live_recitation.webm', { type: 'audio/webm' });
-        }
-
-        if (!fileToSend) return;
-
-        // UI Loading state
-        submitBtn.disabled = true;
-        btnText.textContent = 'Analyzing Voice Embedding...';
-        spinner.style.display = 'inline-block';
-        errorBanner.style.display = 'none';
-        resultsSection.style.display = 'none';
-
-        const formData = new FormData();
-        formData.append('file', fileToSend);
-
-        try {
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                body: formData
-            });
-
-            if (!response.ok) {
-                const errData = await response.json().catch(() => ({ detail: response.statusText }));
-                throw new Error(errData.detail || 'Failed to match voice print.');
-            }
-
-            const data = await response.json();
-            renderResults(data);
-        } catch (err) {
-            errorBanner.textContent = `Error: ${err.message}`;
-            errorBanner.style.display = 'block';
-        } finally {
-            submitBtn.disabled = false;
-            btnText.textContent = 'Match Voice Print';
-            spinner.style.display = 'none';
-        }
-    });
-
-    function renderResults(data) {
-        matchesContainer.innerHTML = '';
-        const matches = data.matches || [];
-
-        matches.forEach((match, index) => {
-            const confidencePct = (match.confidence * 100).toFixed(1);
-            const isTop1 = index === 0;
-
-            const card = document.createElement('div');
-            card.className = `match-card ${isTop1 ? 'top-1' : ''}`;
-            card.innerHTML = `
-                <div class="qari-info">
-                    <div class="qari-rank">${isTop1 ? '🏆 Primary Match' : `Match #${index + 1}`}</div>
-                    <div class="qari-name">${escapeHtml(match.qari)}</div>
-                    <div class="progress-bar-bg">
-                        <div class="progress-bar-fill" style="width: ${confidencePct}%"></div>
+            <!-- Record Mode Section -->
+            <div id="recordSection" style="display: none;">
+                <div class="recorder-card">
+                    <div class="rec-status" id="recStatus">Ready to Record</div>
+                    <div class="rec-timer" id="recTimer">00:00</div>
+                    <div class="rec-controls">
+                        <button type="button" class="btn-rec" id="startRecBtn">🔴 Start Recording</button>
+                        <button type="button" class="btn-stop" id="stopRecBtn" disabled>⏹️ Stop</button>
                     </div>
                 </div>
-                <div class="confidence-box">
-                    <div class="confidence-val">${confidencePct}%</div>
-                    <div style="font-size: 0.75rem; color: var(--text-muted);">Similarity</div>
-                </div>
-            `;
-            matchesContainer.appendChild(card);
+            </div>
+
+            <audio id="audioPreview" class="audio-preview" controls></audio>
+
+            <button type="submit" class="btn-submit" id="submitBtn" style="margin-top: 1.2rem;" disabled>
+                <span class="spinner" id="spinner"></span>
+                <span id="btnText">Match Voice Print</span>
+            </button>
+        </form>
+
+        <div class="error-banner" id="errorBanner"></div>
+
+        <div class="results-section" id="resultsSection">
+            <div class="results-header">✨ Top 3 Reciter Matches</div>
+            <div id="matchesContainer"></div>
+
+            <span class="raw-json-toggle" id="jsonToggle">▶ Show Raw JSON Response</span>
+            <pre class="json-dump" id="jsonDump"></pre>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('matcherForm');
+        const tabUpload=document.getElementById('tabUpload');
+        const tabRecord=document.getElementById('tabRecord');
+        const uploadSection=document.getElementById('uploadSection');
+        const recordSection=document.getElementById('recordSection');
+        const audioInput=document.getElementById('audioInput');
+        const fileInfo=document.getElementById('fileInfo');
+        const uploadPrompt=document.getElementById('uploadPrompt');
+        const startRecBtn=document.getElementById('startRecBtn');
+        const stopRecBtn=document.getElementById('stopRecBtn');
+        const recStatus=document.getElementById('recStatus');
+        const recTimer=document.getElementById('recTimer');
+        const audioPreview=document.getElementById('audioPreview');
+        const submitBtn=document.getElementById('submitBtn');
+        const btnText=document.getElementById('btnText');
+        const spinner=document.getElementById('spinner');
+        const resultsSection=document.getElementById('resultsSection');
+        const matchesContainer=document.getElementById('matchesContainer');
+        const jsonDump=document.getElementById('jsonDump');
+        const jsonToggle=document.getElementById('jsonToggle');
+        const errorBanner=document.getElementById('errorBanner');
+
+        const API_URL='http://localhost:8000/api/v1/matcher/recommend';
+
+        let activeTab='upload';
+        let mediaRecorder;
+        let audioChunks=[];
+        let recordedBlob=null;
+        let timerInterval;
+        let secondsRecorded=0;
+
+        // Tab Switching
+        tabUpload.addEventListener('click', ()=> {
+                activeTab='upload';
+                tabUpload.classList.add('active');
+                tabRecord.classList.remove('active');
+                uploadSection.style.display='block';
+                recordSection.style.display='none';
+                checkSubmitReady();
+            });
+
+        tabRecord.addEventListener('click', ()=> {
+                activeTab='record';
+                tabRecord.classList.add('active');
+                tabUpload.classList.remove('active');
+                recordSection.style.display='block';
+                uploadSection.style.display='none';
+                checkSubmitReady();
+            });
+
+        // File Selection
+        audioInput.addEventListener('change', (e)=> {
+                const file=e.target.files[0];
+
+                if (file) {
+                    fileInfo.textContent=`Selected: $ {
+                        file.name
+                    }
+
+                    ($ {
+                            (file.size / (1024 * 1024)).toFixed(2)
+                        }
+
+                        MB)`;
+                    uploadPrompt.style.display='none';
+                    audioPreview.src=URL.createObjectURL(file);
+                    audioPreview.style.display='block';
+                    checkSubmitReady();
+                }
+            });
+
+        // Live Recording
+        startRecBtn.addEventListener('click', async ()=> {
+                try {
+                    const stream=await navigator.mediaDevices.getUserMedia({
+                        audio: true
+                    });
+                mediaRecorder=new MediaRecorder(stream);
+                audioChunks=[];
+
+                mediaRecorder.ondataavailable=(e)=> {
+                    if (e.data.size > 0) audioChunks.push(e.data);
+                }
+
+                ;
+
+                mediaRecorder.onstop=()=> {
+                    recordedBlob=new Blob(audioChunks, {
+                        type: 'audio/webm'
+                    });
+                audioPreview.src=URL.createObjectURL(recordedBlob);
+                audioPreview.style.display='block';
+                recStatus.textContent='✓ Recording Captured';
+                recStatus.style.color='var(--emerald)';
+                checkSubmitReady();
+            }
+
+            ;
+
+            mediaRecorder.start();
+            secondsRecorded=0;
+            recTimer.textContent='00:00';
+
+            timerInterval=setInterval(()=> {
+                    secondsRecorded++;
+                    const mins=String(Math.floor(secondsRecorded / 60)).padStart(2, '0');
+                    const secs=String(secondsRecorded % 60).padStart(2, '0');
+
+                    recTimer.textContent=`$ {
+                        mins
+                    }
+
+                    :$ {
+                        secs
+                    }
+
+                    `;
+                }
+
+                , 1000);
+
+            startRecBtn.disabled=true;
+            stopRecBtn.disabled=false;
+            recStatus.textContent='🎙️ Recording Live Audio...';
+            recStatus.style.color='var(--rose)';
+        }
+
+        catch (err) {
+            alert('Microphone access error: ' + err.message);
+        }
         });
 
-        jsonDump.textContent = JSON.stringify(data, null, 2);
-        resultsSection.style.display = 'block';
-    }
+        stopRecBtn.addEventListener('click', ()=> {
+                if (mediaRecorder && mediaRecorder.state !=='inactive') {
+                    mediaRecorder.stop();
+                    mediaRecorder.stream.getTracks().forEach(track=> track.stop());
+                    clearInterval(timerInterval);
+                    startRecBtn.disabled=false;
+                    stopRecBtn.disabled=true;
+                }
+            });
 
-    jsonToggle.addEventListener('click', () => {
-        if (jsonDump.style.display === 'block') {
-            jsonDump.style.display = 'none';
-            jsonToggle.textContent = '▶ Show Raw JSON Response';
-        } else {
-            jsonDump.style.display = 'block';
-            jsonToggle.textContent = '▼ Hide Raw JSON Response';
+        function checkSubmitReady() {
+            if (activeTab==='upload' && audioInput.files[0]) {
+                submitBtn.disabled=false;
+            }
+
+            else if (activeTab==='record' && recordedBlob) {
+                submitBtn.disabled=false;
+            }
+
+            else {
+                submitBtn.disabled=true;
+            }
         }
-    });
 
-    function escapeHtml(str) {
-        return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    }
-</script>
+        form.addEventListener('submit', async (e)=> {
+                e.preventDefault();
 
-</body>
-</html>
+                let fileToSend;
+
+                if (activeTab==='upload') {
+                    fileToSend=audioInput.files[0];
+                }
+
+                else {
+                    if ( !recordedBlob) return;
+
+                    fileToSend=new File([recordedBlob], 'live_recitation.webm', {
+                        type: 'audio/webm'
+                    });
+            }
+
+            if ( !fileToSend) return;
+
+            // UI Loading state
+            submitBtn.disabled=true;
+            btnText.textContent='Analyzing Voice Embedding...';
+            spinner.style.display='inline-block';
+            errorBanner.style.display='none';
+            resultsSection.style.display='none';
+
+            const formData=new FormData();
+            formData.append('file', fileToSend);
+
+            try {
+                const response=await fetch(API_URL, {
+                    method: 'POST',
+                    body: formData
+                });
+
+            if ( !response.ok) {
+                const errData=await response.json().catch(()=> ({
+                        detail: response.statusText
+                    }));
+            throw new Error(errData.detail || 'Failed to match voice print.');
+        }
+
+        const data=await response.json();
+        renderResults(data);
+        }
+
+        catch (err) {
+            errorBanner.textContent=`Error: $ {
+                err.message
+            }
+
+            `;
+            errorBanner.style.display='block';
+        }
+
+        finally {
+            submitBtn.disabled=false;
+            btnText.textContent='Match Voice Print';
+            spinner.style.display='none';
+        }
+        });
+
+        function renderResults(data) {
+            matchesContainer.innerHTML='';
+            const matches=data.matches || [];
+
+            matches.forEach((match, index)=> {
+                    const confidencePct=(match.confidence * 100).toFixed(1);
+                    const isTop1=index===0;
+
+                    const card=document.createElement('div');
+
+                    card.className=`match-card $ {
+                        isTop1 ? 'top-1' : ''
+                    }
+
+                    `;
+
+                    card.innerHTML=` <div class="qari-info" > <div class="qari-rank" >$ {
+                        isTop1 ? '🏆 Primary Match' : `Match #$ {
+                            index + 1
+                        }
+
+                        `
+                    }
+
+                    </div> <div class="qari-name" >$ {
+                        escapeHtml(match.qari)
+                    }
+
+                    </div> <div class="progress-bar-bg" > <div class="progress-bar-fill" style="width: ${confidencePct}%" ></div> </div> </div> <div class="confidence-box" > <div class="confidence-val" >$ {
+                        confidencePct
+                    }
+
+                    %</div> <div style="font-size: 0.75rem; color: var(--text-muted);" >Similarity</div> </div> `;
+                    matchesContainer.appendChild(card);
+                });
+
+            jsonDump.textContent=JSON.stringify(data, null, 2);
+            resultsSection.style.display='block';
+        }
+
+        jsonToggle.addEventListener('click', ()=> {
+                if (jsonDump.style.display==='block') {
+                    jsonDump.style.display='none';
+                    jsonToggle.textContent='▶ Show Raw JSON Response';
+                }
+
+                else {
+                    jsonDump.style.display='block';
+                    jsonToggle.textContent='▼ Hide Raw JSON Response';
+                }
+            });
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        </script></body></html>
