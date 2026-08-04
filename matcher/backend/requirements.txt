@@ -1,9 +1,0 @@
-librosa
-soundfile
-numpy
-torch
-transformers
-fastapi
-uvicorn
-scikit-learn
-python-multipart

@@ -335,3 +335,163 @@ Itqān/
   - **Status**: Completed successfully (625 successes, 0 failures).
 - **2026-07-11 19:42**: Ran optimized `extract_features_and_diagnostics.py` script.
   - **Status**: Completed successfully. Extracted 768-dimensional HuBERT speaker identity embeddings and DSP vocal diagnostics (F0 bounds, HNR, Jitter, Shimmer) for all 625 files, compiled [master_vector_matrix.json](file:///c:/Users/manaa/Documents/appagent/Itq%C4%81n/matcher/data/master_vector_matrix.json) (~14MB), and pushed all assets to GitHub.
+
+---
+
+## 📅 Session Log: 2026-07-15 (Google Colab Migration & Qari Match Cleanup)
+
+### 1. Goal & Requirements
+- **Goal**: Facilitate migrating the workspace to Google Colab.
+- **Goal 2**: Clean up the current Qari Matcher local model database files and processed audio data to prepare for a new Qari matching architecture.
+
+### 2. Architecture & File Layout Updates
+- [Colab_Migration.ipynb](file:///c:/Users/manaa/Documents/appagent/Itqān/Colab_Migration.ipynb): Added a step-by-step Jupyter Notebook to mount Drive, install dependencies, adapt paths, and run backends on Google Colab.
+- `matcher/data/`: Emptied this directory by deleting model databases and processed audio subdirectories.
+
+### 3. Implementation Details
+- **Google Colab Notebook**: Built a template containing:
+  - Google Drive mounting.
+  - Dependency installation from `requirements.txt`.
+  - Dynamic patching of hardcoded Windows target paths in `download_recitations.py` to target local `/content/drive/` directories.
+  - Code to expose local FastAPI instances to the web using `pyngrok`.
+- **Database and Data Deletion**: Cleared out the previous `vector_db.json` and `master_vector_matrix.json` databases, as well as the processed audio folders (`baseline`, `deep`, `high`) under `matcher/data/` to make room for the new architecture.
+
+---
+
+## 📅 Session Log: 2026-08-02 (Workspace Reset & Clean Slate)
+
+### 1. Goal & Requirements
+- **Goal**: Clean and reset the repository by removing legacy workspace modules (`backend/`, `matcher/`, `tajweed/`, scripts, and cached files) to start over with a clean slate.
+- **Retained Files**: Preserved `cell1.py`, `cell2.py`, `cell3.py`, `CHANGELOG.md`, and `.gitignore`.
+
+---
+
+### 2. Architecture & File Layout Updates
+Cleaned the workspace directory `Itqān/` down to its core foundation:
+```text
+Itqān/
+├── cell1.py                  # Preserved pipeline script (cell 1)
+├── cell2.py                  # Preserved pipeline script (cell 2)
+├── cell3.py                  # Preserved pipeline script (cell 3)
+├── CHANGELOG.md              # Context preservation log (this file)
+└── .gitignore                # Git repository ignore rules
+```
+
+---
+
+### 3. Execution Summary
+- **Directories Deleted**:
+  - `backend/`
+  - `matcher/`
+  - `tajweed/`
+  - `__pycache__/`
+- **Files Deleted**:
+  - `Colab_Migration.ipynb`
+  - `lessonns.txt`
+  - `requirements.txt`
+- **Status**: Workspace successfully reset for the next implementation phase.
+
+---
+
+## 📅 Session Log: 2026-08-02 (Phase 1 Architecture: QariMatch USP Core)
+
+### 1. Goal & Requirements
+- **Goal**: Implement Phase 1 Architecture for the voice biometric Qari Matcher prototype.
+- **Model**: `microsoft/wavlm-base-plus-sv` via Hugging Face (`AutoFeatureExtractor` and `AutoModelForAudioXVector`).
+- **Database**: Extracted pre-computed 512-dimensional speaker x-vectors for 242 Qaris from `master_vector_matrix.json` into `itqan-phase1/backend/data/vector_db.json`.
+- **FastAPI Engine**: Warm-load model weights and vector matrix on server startup, process uploaded audio in memory (16kHz mono via `librosa`), extract speaker x-vectors, and run Cosine Similarity against all 242 Qaris to return the top 3 matches.
+- **Frontend Testing UI**: Standalone, modern glassmorphic HTML/JS interface for testing audio file uploads (.wav, .mp3, .m4a) against the local backend endpoint.
+
+---
+
+### 2. Architecture & File Layout
+```text
+Itqān/
+├── convert_matrix_to_db.py       # Helper script extracting 242-Qari vector_db.json
+└── itqan-phase1/
+    ├── backend/
+    │   ├── app/
+    │   │   ├── __init__.py
+    │   │   ├── main.py            # FastAPI entrypoint, lifespan manager & /recommend endpoint
+    │   │   └── matcher.py         # VoiceMatcher class (WavLM SV inference & scikit-learn cosine sim)
+    │   ├── data/
+    │   │   └── vector_db.json     # 242 Qaris 512-dim speaker x-vectors
+    │   └── requirements.txt       # Backend dependencies
+    └── frontend_basic/
+        └── index.html             # Testing UI dashboard with audio preview & JSON output
+
+---
+
+## 📅 Session Log: 2026-08-02 (Phase 2 Architecture: Tajweed Assessment & Forced Alignment)
+
+### 1. Goal & Requirements
+- **Goal**: Implement Phase 2 Architecture for Tajweed rules assessment and letter-level forced alignment.
+- **Model**: Hugging Face CTC model (`jonatasgrosman/wav2vec2-large-xlsr-53-arabic` via `AutoProcessor` and `AutoModelForCTC`).
+- **Universal Audio Ingestion**: Standardized 16kHz mono float32 decoding for all audio formats (.wav, .mp3, .m4a, .ogg, .flac, .webm, .aac, .opus, etc.).
+- **Forced Alignment Engine**: Extract character timestamps (`start_time`, `end_time`) aligned with target Arabic text.
+- **DSP Tajweed Evaluator**:
+  - `madd`: Vowel prolongation duration metric check (>= 1.0 sec).
+  - `ghunnah`: Nasal acoustic band energy ratio (200Hz - 2000Hz) vs total energy check.
+- **API Endpoint**: Exposed `POST /api/v1/tajweed/analyze` accepting `file` (audio) and `text` (Arabic string).
+- **Frontend Testing UI**: Created `frontend_basic/tajweed.html` offering RTL character timestamp cards, pass/fail status badges, and collapsible JSON output.
+
+---
+
+### 2. Architecture & File Layout
+```text
+Itqān/
+└── itqan-phase1/
+    ├── backend/
+    │   ├── app/
+    │   │   ├── __init__.py
+    │   │   ├── main.py            # FastAPI entrypoint (/matcher/recommend & /tajweed/analyze)
+    │   │   ├── matcher.py         # VoiceMatcher class (WavLM SV speaker x-vectors)
+    │   │   └── tajweed.py         # TajweedEvaluator class (CTC alignment & DSP rules)
+    │   ├── data/
+    │   │   └── vector_db.json     # 242 Qaris 512-dim speaker x-vectors
+    │   └── requirements.txt       # Backend dependencies
+    └── frontend_basic/
+        ├── index.html             # Phase 1 Matcher UI
+        └── tajweed.html           # Phase 2 Tajweed Assessment UI
+```
+
+---
+
+## 📅 Session Log: 2026-08-04 (Tajweed Level Architecture & Interactive Learning Portal)
+
+### 1. Goal & Requirements
+- **Goal**: Structure Tajweed education into a comprehensive 6-Tier, 24 Mini-Level Learning Architecture based on `INFO.md` and develop an interactive frontend Tajweed Learning Portal.
+- **Syllabus Architecture (`tajweed_syllabus.md`)**:
+  - Structured 6 Tiers: Tier 1 (Foundations & Articulation Points), Tier 2 (Resonance & Heavy/Light Rules), Tier 3 (Rules of Meem Saakin), Tier 4 (Rules of Noon Saakin & Tanween), Tier 5 (Advanced Assimilation & Madd System), Tier 6 (Recitation Mastery, Waqf & Sajdah).
+  - Divided into 24 granular mini-level modules (Level 1.1 to 6.4), complete with pedagogical objectives, technical rules, common student pitfalls, practice drill tables with authentic Quranic extracts from `INFO.md`, and AI evaluation metrics.
+- **Backend Enhancements (`backend/app/tajweed.py`)**:
+  - Expanded `parse_tajweed_rules_from_text` to support rule parsing and regex matching for all 24 mini-levels, including `Maddul Laazim` (Huroof Muqatta'at), `Ikhfa Shafawi`, `Idghaam Shafawi`, `Ithaar Shafawi`, `Idghaam without Ghunnah`, `Idghaam Mithlayn`, `Idghaam Mutaqaaribayn`, `Raa Tafkheem/Tarqeeq`, and `Sun/Moon Letters`.
+- **Interactive Web Portal (`frontend_basic/tajweed.html`)**:
+  - Developed full-featured Tajweed Learning Portal with sidebar curriculum blueprint navigator, level selection buttons, progress bar tracking % completion, and `localStorage` persistence.
+  - Pre-loaded practice drill chips for every level auto-populating Quranic text.
+  - Live microphone recording suite (`MediaRecorder` API) and file uploader.
+  - Character forced-alignment timeline pills and real-time DSP rule verification cards (`PASSED`, `NEEDS REVIEW`, `NOT APPLICABLE`).
+- **Header Navigation (`frontend_basic/index.html`)**:
+  - Integrated top navigation header linking Qari Voice Matcher and Tajweed Learning Portal.
+
+---
+
+### 2. Architecture & File Layout
+```text
+Itqān/
+├── INFO.md                        # Master source of Tajweed rules & Quranic examples
+├── tajweed_syllabus.md            # Comprehensive 6-Tier, 24 Mini-Level syllabus artifact
+├── CHANGELOG.md                   # Execution history log (this file)
+└── itqan-phase1/
+    ├── backend/
+    │   ├── app/
+    │   │   ├── __init__.py
+    │   │   ├── main.py            # FastAPI entrypoint (/matcher/recommend & /tajweed/analyze)
+    │   │   ├── matcher.py         # VoiceMatcher class (WavLM SV speaker x-vectors)
+    │   │   └── tajweed.py         # TajweedEvaluator class (Expanded 24-level rule parser & forced alignment)
+    │   └── data/
+    │       └── vector_db.json     # 242 Qaris 512-dim speaker x-vectors
+    └── frontend_basic/
+        ├── index.html             # Phase 1 Matcher UI + Top Navigation Header
+        └── tajweed.html           # Phase 2 Interactive 24 Mini-Level Tajweed Learning Portal
+```

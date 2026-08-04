@@ -1,1 +1,0 @@
-# Itqān Tajweed Backend App

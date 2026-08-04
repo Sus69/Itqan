@@ -1,6 +1,7 @@
 # Audio files
 *.wav
 *.mp3
+*.mpeg
 *.tmp
 *.lnk
 *.opus
