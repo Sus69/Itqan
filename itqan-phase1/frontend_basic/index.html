@@ -133,6 +133,7 @@
             font-size: 2.2rem;
             font-weight: 700;
             background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+            background-clip: text;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             margin-bottom: 0.5rem;
@@ -592,211 +593,164 @@
             });
 
         // File Selection
-        audioInput.addEventListener('change', (e)=> {
-                const file=e.target.files[0];
+        audioInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
 
-                if (file) {
-                    fileInfo.textContent=`Selected: $ {
-                        file.name
-                    }
-
-                    ($ {
-                            (file.size / (1024 * 1024)).toFixed(2)
-                        }
-
-                        MB)`;
-                    uploadPrompt.style.display='none';
-                    audioPreview.src=URL.createObjectURL(file);
-                    audioPreview.style.display='block';
-                    checkSubmitReady();
-                }
-            });
-
-        // Live Recording
-        startRecBtn.addEventListener('click', async ()=> {
-                try {
-                    const stream=await navigator.mediaDevices.getUserMedia({
-                        audio: true
-                    });
-                mediaRecorder=new MediaRecorder(stream);
-                audioChunks=[];
-
-                mediaRecorder.ondataavailable=(e)=> {
-                    if (e.data.size > 0) audioChunks.push(e.data);
-                }
-
-                ;
-
-                mediaRecorder.onstop=()=> {
-                    recordedBlob=new Blob(audioChunks, {
-                        type: 'audio/webm'
-                    });
-                audioPreview.src=URL.createObjectURL(recordedBlob);
-                audioPreview.style.display='block';
-                recStatus.textContent='✓ Recording Captured';
-                recStatus.style.color='var(--emerald)';
+            if (file) {
+                fileInfo.textContent = `Selected: ${file.name} (${(file.size / (1024 * 1024)).toFixed(2)} MB)`;
+                uploadPrompt.style.display = 'none';
+                audioPreview.src = URL.createObjectURL(file);
+                audioPreview.style.display = 'block';
                 checkSubmitReady();
             }
-
-            ;
-
-            mediaRecorder.start();
-            secondsRecorded=0;
-            recTimer.textContent='00:00';
-
-            timerInterval=setInterval(()=> {
-                    secondsRecorded++;
-                    const mins=String(Math.floor(secondsRecorded / 60)).padStart(2, '0');
-                    const secs=String(secondsRecorded % 60).padStart(2, '0');
-
-                    recTimer.textContent=`$ {
-                        mins
-                    }
-
-                    :$ {
-                        secs
-                    }
-
-                    `;
-                }
-
-                , 1000);
-
-            startRecBtn.disabled=true;
-            stopRecBtn.disabled=false;
-            recStatus.textContent='🎙️ Recording Live Audio...';
-            recStatus.style.color='var(--rose)';
-        }
-
-        catch (err) {
-            alert('Microphone access error: ' + err.message);
-        }
         });
 
-        stopRecBtn.addEventListener('click', ()=> {
-                if (mediaRecorder && mediaRecorder.state !=='inactive') {
-                    mediaRecorder.stop();
-                    mediaRecorder.stream.getTracks().forEach(track=> track.stop());
-                    clearInterval(timerInterval);
-                    startRecBtn.disabled=false;
-                    stopRecBtn.disabled=true;
-                }
-            });
+        // Live Recording
+        startRecBtn.addEventListener('click', async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    audio: true
+                });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) audioChunks.push(e.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    recordedBlob = new Blob(audioChunks, {
+                        type: 'audio/webm'
+                    });
+                    audioPreview.src = URL.createObjectURL(recordedBlob);
+                    audioPreview.style.display = 'block';
+                    recStatus.textContent = '✓ Recording Captured';
+                    recStatus.style.color = 'var(--emerald)';
+                    checkSubmitReady();
+                };
+
+                mediaRecorder.start();
+                secondsRecorded = 0;
+                recTimer.textContent = '00:00';
+
+                timerInterval = setInterval(() => {
+                    secondsRecorded++;
+                    const mins = String(Math.floor(secondsRecorded / 60)).padStart(2, '0');
+                    const secs = String(secondsRecorded % 60).padStart(2, '0');
+
+                    recTimer.textContent = `${mins}:${secs}`;
+                }, 1000);
+
+                startRecBtn.disabled = true;
+                stopRecBtn.disabled = false;
+                recStatus.textContent = '🎙️ Recording Live Audio...';
+                recStatus.style.color = 'var(--rose)';
+            } catch (err) {
+                alert('Microphone access error: ' + err.message);
+            }
+        });
+
+        stopRecBtn.addEventListener('click', () => {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                clearInterval(timerInterval);
+                startRecBtn.disabled = false;
+                stopRecBtn.disabled = true;
+            }
+        });
 
         function checkSubmitReady() {
-            if (activeTab==='upload' && audioInput.files[0]) {
-                submitBtn.disabled=false;
-            }
-
-            else if (activeTab==='record' && recordedBlob) {
-                submitBtn.disabled=false;
-            }
-
-            else {
-                submitBtn.disabled=true;
+            if (activeTab === 'upload' && audioInput.files[0]) {
+                submitBtn.disabled = false;
+            } else if (activeTab === 'record' && recordedBlob) {
+                submitBtn.disabled = false;
+            } else {
+                submitBtn.disabled = true;
             }
         }
 
-        form.addEventListener('submit', async (e)=> {
-                e.preventDefault();
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
 
-                let fileToSend;
+            let fileToSend;
 
-                if (activeTab==='upload') {
-                    fileToSend=audioInput.files[0];
-                }
+            if (activeTab === 'upload') {
+                fileToSend = audioInput.files[0];
+            } else {
+                if (!recordedBlob) return;
 
-                else {
-                    if ( !recordedBlob) return;
-
-                    fileToSend=new File([recordedBlob], 'live_recitation.webm', {
-                        type: 'audio/webm'
-                    });
+                fileToSend = new File([recordedBlob], 'live_recitation.webm', {
+                    type: 'audio/webm'
+                });
             }
 
-            if ( !fileToSend) return;
+            if (!fileToSend) return;
 
             // UI Loading state
-            submitBtn.disabled=true;
-            btnText.textContent='Analyzing Voice Embedding...';
-            spinner.style.display='inline-block';
-            errorBanner.style.display='none';
-            resultsSection.style.display='none';
+            submitBtn.disabled = true;
+            btnText.textContent = 'Analyzing Voice Embedding...';
+            spinner.style.display = 'inline-block';
+            errorBanner.style.display = 'none';
+            resultsSection.style.display = 'none';
 
-            const formData=new FormData();
+            const formData = new FormData();
             formData.append('file', fileToSend);
 
             try {
-                const response=await fetch(API_URL, {
+                const response = await fetch(API_URL, {
                     method: 'POST',
                     body: formData
                 });
 
-            if ( !response.ok) {
-                const errData=await response.json().catch(()=> ({
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({
                         detail: response.statusText
                     }));
-            throw new Error(errData.detail || 'Failed to match voice print.');
-        }
+                    throw new Error(errData.detail || 'Failed to match voice print.');
+                }
 
-        const data=await response.json();
-        renderResults(data);
-        }
-
-        catch (err) {
-            errorBanner.textContent=`Error: $ {
-                err.message
+                const data = await response.json();
+                renderResults(data);
+            } catch (err) {
+                errorBanner.textContent = `Error: ${err.message}`;
+                errorBanner.style.display = 'block';
+            } finally {
+                submitBtn.disabled = false;
+                btnText.textContent = 'Match Voice Print';
+                spinner.style.display = 'none';
             }
-
-            `;
-            errorBanner.style.display='block';
-        }
-
-        finally {
-            submitBtn.disabled=false;
-            btnText.textContent='Match Voice Print';
-            spinner.style.display='none';
-        }
         });
 
         function renderResults(data) {
-            matchesContainer.innerHTML='';
-            const matches=data.matches || [];
+            matchesContainer.innerHTML = '';
+            const matches = data.matches || [];
 
-            matches.forEach((match, index)=> {
-                    const confidencePct=(match.confidence * 100).toFixed(1);
-                    const isTop1=index===0;
+            matches.forEach((match, index) => {
+                const confidencePct = (match.confidence * 100).toFixed(1);
+                const isTop1 = index === 0;
 
-                    const card=document.createElement('div');
+                const card = document.createElement('div');
+                card.className = `match-card ${isTop1 ? 'top-1' : ''}`;
 
-                    card.className=`match-card $ {
-                        isTop1 ? 'top-1' : ''
-                    }
+                card.innerHTML = `
+                    <div class="qari-info">
+                        <div class="qari-rank">${isTop1 ? '🏆 Primary Match' : `Match #${index + 1}`}</div>
+                        <div class="qari-name">${escapeHtml(match.qari)}</div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill" style="width: ${confidencePct}%"></div>
+                        </div>
+                    </div>
+                    <div class="confidence-box">
+                        <div class="confidence-val">${confidencePct}%</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">Similarity</div>
+                    </div>
+                `;
+                matchesContainer.appendChild(card);
+            });
 
-                    `;
-
-                    card.innerHTML=` <div class="qari-info" > <div class="qari-rank" >$ {
-                        isTop1 ? '🏆 Primary Match' : `Match #$ {
-                            index + 1
-                        }
-
-                        `
-                    }
-
-                    </div> <div class="qari-name" >$ {
-                        escapeHtml(match.qari)
-                    }
-
-                    </div> <div class="progress-bar-bg" > <div class="progress-bar-fill" style="width: ${confidencePct}%" ></div> </div> </div> <div class="confidence-box" > <div class="confidence-val" >$ {
-                        confidencePct
-                    }
-
-                    %</div> <div style="font-size: 0.75rem; color: var(--text-muted);" >Similarity</div> </div> `;
-                    matchesContainer.appendChild(card);
-                });
-
-            jsonDump.textContent=JSON.stringify(data, null, 2);
-            resultsSection.style.display='block';
+            jsonDump.textContent = JSON.stringify(data, null, 2);
+            resultsSection.style.display = 'block';
         }
 
         jsonToggle.addEventListener('click', ()=> {
