@@ -4,6 +4,19 @@ This file documents the steps, architecture, and modifications made during the d
 
 ---
 
+## 📅 Session Log: 2026-08-05
+
+### 1. Goal & Requirements
+- **Goal**: Create engineering documentation for API Contracts and Audio Pipeline.
+- **Task 1**: Draft `api-contracts.md` outlining the backend architecture, endpoints, data payloads, and contracts.
+- **Task 2**: Draft `audio-pipeline.md` detailing the lifecycle of audio from capture to AI evaluation, phoneme alignment, and voice matching.
+
+### 2. Changes Made
+- Created `docs/engineering/api-contracts.md`
+- Created `docs/engineering/audio-pipeline.md`
+
+---
+
 ## 📅 Session Log: 2026-06-30
 
 ### 1. Goal & Requirements
@@ -495,3 +508,99 @@ Itqān/
         ├── index.html             # Phase 1 Matcher UI + Top Navigation Header
         └── tajweed.html           # Phase 2 Interactive 24 Mini-Level Tajweed Learning Portal
 ```
+
+---
+
+## 📅 Session Log: 2026-08-04 (Part 2: Master Educational & System Architecture Blueprint & 7-Module Curriculum)
+
+### 1. Goal & Requirements
+- **Goal**: Adopt the definitive **ITQAN: The AI-Powered Tajweed Ecosystem — Master Educational & System Architecture Blueprint**, expanding the complete 20-part architectural specification into [tajweed_syllabus.md](file:///c:/Users/manaa/Documents/appagent/Itqān/tajweed_syllabus.md) and updating the backend/frontend to reflect the 7-Module Curriculum.
+- **Master Curriculum Blueprint ([tajweed_syllabus.md](file:///c:/Users/manaa/Documents/appagent/Itqān/tajweed_syllabus.md))**:
+  - Authored a comprehensive 20-part master architectural reference incorporating:
+    - **Educational Philosophy**: *Talaqqi* via AI, Scaffolding & Cognitive Load Management, Active Recall & Ebbinghaus Spaced Repetition (SRS), and 85% Confidence Score Mastery Learning.
+    - **Learning Hierarchy & Lesson Sequence**: 11-level hierarchy (Course to Certification) and a 10-step pedagogical lesson blueprint.
+    - **AI Teacher Persona & Adaptive Skill Trees**: Sheikh persona (analogies, Hadith encouragement, amber review indicators, frustration management) and Knowledge Graph dependency tracking.
+    - **DSP Voice Practice & Mistake Taxonomy**: Sub-second Wav2Vec2 CTC forced alignment + DSP rule evaluation, green/red zone feedback cards, and 6-category error classification (*Makhraj*, *Sifaat*, *Ahkaam*, *Waqf*).
+    - **7-Module Master Curriculum**: Fully detailed specification for Module 1 (*Makhaarij*), Module 2 (*Sifaat*), Module 3 (*Noon & Meem*), Module 4 (*Madd*), Module 5 (*Waqf*), Module 6 (*Fluency*), and Module 7 (*Khatma Mode*), complete with authentic Quranic drill verses and references from [INFO.md](file:///c:/Users/manaa/Documents/appagent/Itqān/INFO.md).
+- **Backend Architecture Enhancement ([backend/app/tajweed.py](file:///c:/Users/manaa/Documents/appagent/Itqān/itqan-phase1/backend/app/tajweed.py))**:
+  - Updated `rules_catalog` to assign an explicit `"module"` (1 through 7) to every rule alongside its `"tier"`.
+  - Added new algorithmic detection rules for Module 1 (`makhaarij_throat`, `makhaarij_lips`) and Module 5 (`waqf_sukoon`, `waqf_qalqalah`) with corresponding regex pattern matching in `parse_tajweed_rules_from_text`.
+- **Frontend Navigation & Dashboard Interconnectivity**:
+  - Integrated [itqan.html](file:///c:/Users/manaa/Documents/appagent/Itqān/itqan-phase1/frontend_basic/itqan.html) (the 7-Module Path & Daily Review Dashboard) into the global navigation headers across [index.html](file:///c:/Users/manaa/Documents/appagent/Itqān/itqan-phase1/frontend_basic/index.html) (Qari Voice Matcher) and [tajweed.html](file:///c:/Users/manaa/Documents/appagent/Itqān/itqan-phase1/frontend_basic/tajweed.html) (Live Tajweed Assessor), ensuring seamless navigation across the entire ecosystem.
+
+---
+
+### 2. Architecture & File Layout
+```text
+Itqān/
+├── INFO.md                        # Master source of Tajweed rules & Quranic examples
+├── tajweed_syllabus.md            # Master 20-Part Educational Blueprint & 7-Module Curriculum Specification
+├── CHANGELOG.md                   # Execution history log (this file)
+└── itqan-phase1/
+    ├── backend/
+    │   ├── app/
+    │   │   ├── __init__.py
+    │   │   ├── main.py            # FastAPI entrypoint (/matcher/recommend & /tajweed/analyze)
+    │   │   ├── matcher.py         # VoiceMatcher class (WavLM SV speaker x-vectors)
+    │   │   └── tajweed.py         # TajweedEvaluator class (7-Module rule parser, DSP rules & forced alignment)
+    │   └── data/
+    │       └── vector_db.json     # 242 Qaris 512-dim speaker x-vectors
+    └── frontend_basic/
+        ├── index.html             # Phase 1 Voice Qari Matcher UI
+        ├── itqan.html             # Phase 2 Interactive 7-Module Path & Daily Review Dashboard
+        └── tajweed.html           # Phase 2 Live Tajweed Assessment & Forced Alignment Portal
+```
+
+---
+
+## 📅 Session Log: 2026-08-04 (Part 3: Clean 7-Module Curriculum Refactor)
+
+### 1. Goal & Actions
+- **Architecture & File Layout Update**:
+```text
+Itqān/
+├── INFO.md                        # Master source of Tajweed rules & Quranic examples
+├── tajweed_syllabus.md            # Master 20-Part Educational Blueprint & 7-Module Curriculum Specification
+├── CHANGELOG.md                   # Execution history log (this file)
+└── itqan-phase1/
+    ├── backend/
+    │   ├── app/
+    │   │   ├── __init__.py
+    │   │   ├── main.py            # FastAPI entrypoint (/matcher/recommend & /tajweed/analyze)
+    │   │   ├── matcher.py         # VoiceMatcher class (WavLM SV speaker x-vectors)
+    │   │   └── tajweed.py         # TajweedEvaluator class (7-Module rule parser, DSP rules & forced alignment)
+    │   └── data/
+    │       └── vector_db.json     # 242 Qaris 512-dim speaker x-vectors
+    └── frontend_basic/
+        ├── index.html             # Phase 1 Voice Qari Matcher UI
+        └── tajweed.html           # 7-Module Tajweed Curriculum Blueprint & Portal
+```
+- **Deleted `itqan.html`**: Removed `frontend_basic/itqan.html` as requested.
+- **Updated `index.html` Navigation**: Updated top navigation in `frontend_basic/index.html` to focus exclusively on `index.html` (Voice Qari Matcher) and `tajweed.html` (Tajweed Curriculum & Portal).
+- **Clean 7-Module Curriculum in `tajweed.html`**: Completely rewrote [tajweed.html](file:///c:/Users/manaa/Documents/appagent/Itqān/itqan-phase1/frontend_basic/tajweed.html) with a modern, high-contrast dark theme layout presenting the exact 7-Module curriculum structure provided:
+  1. **Module 1: Foundations of Recitation** (*The Aadaab*, *Makhaarij*, *The 7 Groups of Articulation*)
+  2. **Module 2: Letter Characteristics & Pronunciation** (*Introduction to Tajweed*, *Qalqala*, *The Rule of Laam*, *The Rule of Raa*)
+  3. **Module 3: The Rules of Noon and Meem** (*Noon & Meem Mushaddadah*, *3 Rules of Meem Saakin*, *Rules of Noon Saakin & Tanween*: Ikhfa, Ithaar, Idghaam)
+  4. **Module 4: Advanced Assimilation (Idghaam)** (*Idghaam Mithlayn*, *Idghaam Mutaqaaribayn*)
+  5. **Module 5: The Rules of Elongation (Madd)** (*Huroof-ul-Madd*, *Maddul Asli*, *Maddul Muttasil & Munfasil*, *Maddul Laazim*, *Maddul Aaridh*)
+  6. **Module 6: Connecting Words (Alif-Laam)** (*The Sun Letters*, *The Moon Letters*)
+  7. **Module 7: Stopping and Prostration** (*The Rules of Stopping*, *Symbols Denoting Pauses*, *Verses of Prostration*)
+
+---
+
+## 📅 Session Log: 2026-08-04 (Part 4: 15-Part AI Learning Platform Architecture PRD Portal)
+
+### 1. Goal & Actions
+- **Master LXD & Educational Architecture Specification**: Transformed [tajweed.html](file:///c:/Users/manaa/Documents/appagent/Itqān/itqan-phase1/frontend_basic/tajweed.html) into an exhaustive, production-grade **15-Part AI Learning Platform Architecture PRD & 7-Module Curriculum Portal** designed with the depth of a master Product Requirements Document.
+- **15 Pedagogical Learning Science Principles**: Detailed how Active Recall, Retrieval Practice, Deliberate Practice, Mastery Learning, Progressive Disclosure, Cognitive Load Theory, Dual Coding, Spaced Repetition, Immediate Feedback, Error-Based Learning, Interleaving, Scaffolding, Microlearning, Experiential Learning, and Intrinsic Motivation govern every UI interaction and audio loop.
+- **Complete 15-Part Coverage with 8-Point PRD Matrix**: For every domain (from Platform Identity to Information Architecture, Learning Hierarchy, Component System, Lesson Blueprint, Practice System, Progression System, AI Teacher Persona, Audio Learning System, Assessment Framework, Progress Dashboard, Accessibility, Motion & Animation, Design System Tokens, and Scalability), answered all 8 core engineering and LXD requirements:
+  1. Purpose
+  2. Educational Reasoning
+  3. UX Reasoning
+  4. User Journey
+  5. Interaction Flow
+  6. Potential Edge Cases
+  7. Design Recommendations
+  8. Future Scalability
+- **Integrated 7-Module Learning Hierarchy**: Seamlessly embedded the full 7-Module Curriculum (Module 1: Foundations through Module 7: Stopping and Prostration) into the P03 Learning Architecture section with prerequisites and detailed sub-topic breakdowns.
+- **Visual Verification**: Captured uncached browser screenshots confirming the sidebar index (`P01` to `P15`), responsive dark-mode glassmorphism styling, and interactive anchor scrolling.
