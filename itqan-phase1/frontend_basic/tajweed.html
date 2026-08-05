@@ -1,30 +1,32 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Itqān (إتقان) — Interactive Tajweed Learning & Evaluation Portal</title>
+    <title>Itqān (إتقان) — Master AI Learning Platform Architecture PRD</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-gradient: linear-gradient(135deg, #090d16 0%, #111827 40%, #17153b 100%);
-            --card-bg: rgba(23, 32, 54, 0.85);
-            --card-border: rgba(255, 255, 255, 0.12);
-            --primary: #6366f1;
-            --primary-hover: #4f46e5;
-            --primary-glow: rgba(99, 102, 241, 0.35);
-            --emerald: #10b981;
-            --emerald-bg: rgba(16, 185, 129, 0.15);
-            --rose: #f43f5e;
-            --rose-bg: rgba(244, 63, 94, 0.15);
-            --amber: #f59e0b;
-            --amber-bg: rgba(245, 158, 11, 0.15);
-            --cyan: #06b6d4;
-            --purple: #8b5cf6;
+            --bg-dark: #060b13;
+            --bg-card: #0e1726;
+            --bg-card-hover: #152238;
+            --bg-elevated: #1a2a44;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-highlight: rgba(16, 185, 129, 0.35);
+            --primary-emerald: #10b981;
+            --primary-emerald-glow: rgba(16, 185, 129, 0.15);
+            --accent-gold: #f59e0b;
+            --accent-gold-glow: rgba(245, 158, 11, 0.15);
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
+            --text-sub: #64748b;
+            --radius-sm: 8px;
+            --radius-md: 14px;
+            --radius-lg: 20px;
         }
 
         * {
@@ -34,1481 +36,1315 @@
         }
 
         body {
-            font-family: 'Outfit', sans-serif;
-            background: var(--bg-gradient);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-dark);
             color: var(--text-main);
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 1.5rem 1rem 3rem 1rem;
+            line-height: 1.65;
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(16, 185, 129, 0.05) 0%, transparent 45%),
+                radial-gradient(circle at 85% 85%, rgba(59, 130, 246, 0.05) 0%, transparent 45%);
         }
 
-        /* Top Navigation Header */
-        .top-nav {
-            width: 100%;
-            max-width: 1050px;
+        /* Top Header */
+        header.top-nav {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 1rem 1.5rem;
-            background: rgba(15, 23, 42, 0.8);
-            backdrop-filter: blur(12px);
-            border: 1px solid var(--card-border);
-            border-radius: 18px;
-            margin-bottom: 2rem;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+            padding: 1.1rem 2.5rem;
+            background: rgba(14, 23, 38, 0.85);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
         .brand-logo {
             display: flex;
             align-items: center;
-            gap: 0.8rem;
-            font-size: 1.4rem;
-            font-weight: 700;
-            color: #ffffff;
+            gap: 0.85rem;
             text-decoration: none;
+            color: var(--text-main);
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 1.3rem;
+            letter-spacing: -0.01em;
         }
 
-        .brand-logo span.arabic {
+        .brand-logo .arabic {
             font-family: 'Amiri', serif;
-            color: #818cf8;
-            font-size: 1.8rem;
+            font-size: 1.95rem;
+            color: var(--primary-emerald);
             line-height: 1;
+        }
+
+        .prd-badge {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            background: var(--primary-emerald-glow);
+            color: var(--primary-emerald);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 0.35rem 0.75rem;
+            border-radius: 9999px;
         }
 
         .nav-links {
             display: flex;
-            gap: 0.6rem;
+            gap: 0.75rem;
         }
 
         .nav-btn {
-            padding: 0.6rem 1.1rem;
-            border-radius: 12px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: var(--text-muted);
+            padding: 0.55rem 1.15rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
             text-decoration: none;
+            color: var(--text-muted);
             transition: all 0.2s ease;
-            background: rgba(255, 255, 255, 0.04);
+            background: transparent;
             border: 1px solid transparent;
         }
 
-        .nav-btn:hover, .nav-btn.active {
-            color: #ffffff;
-            background: rgba(99, 102, 241, 0.2);
-            border-color: rgba(99, 102, 241, 0.4);
+        .nav-btn:hover {
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.05);
         }
 
-        /* Main Container */
-        .main-layout {
-            width: 100%;
-            max-width: 1050px;
+        .nav-btn.active {
+            color: var(--primary-emerald);
+            background: var(--primary-emerald-glow);
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+
+        /* Layout Container */
+        .app-container {
             display: grid;
             grid-template-columns: 320px 1fr;
+            min-height: calc(100vh - 72px);
+        }
+
+        @media (max-width: 1024px) {
+            .app-container {
+                grid-template-columns: 1fr;
+            }
+            .sidebar {
+                display: none;
+            }
+        }
+
+        /* Sticky Left Sidebar */
+        .sidebar {
+            background: var(--bg-card);
+            border-right: 1px solid var(--border-color);
+            padding: 1.75rem 1.25rem;
+            position: sticky;
+            top: 72px;
+            height: calc(100vh - 72px);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
             gap: 1.5rem;
         }
 
+        .sidebar::-webkit-scrollbar {
+            width: 5px;
+        }
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        .sidebar-header {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-sub);
+            padding-left: 0.5rem;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.65rem 0.85rem;
+            border-radius: 10px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.88rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .sidebar-menu a:hover {
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-main);
+        }
+
+        .sidebar-menu a.active {
+            background: var(--primary-emerald-glow);
+            color: var(--primary-emerald);
+            font-weight: 600;
+        }
+
+        .part-num {
+            font-size: 0.72rem;
+            padding: 0.15rem 0.45rem;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-sub);
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+        }
+
+        .sidebar-menu a.active .part-num {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--primary-emerald);
+        }
+
+        /* Main Content Pane */
+        .content-pane {
+            padding: 3rem 4rem 8rem;
+            max-width: 1240px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        @media (max-width: 768px) {
+            .content-pane {
+                padding: 2rem 1.5rem 5rem;
+            }
+        }
+
+        /* Hero Banner */
+        .hero-banner {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius-lg);
+            padding: 2.75rem 3rem;
+            margin-bottom: 3.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-banner::after {
+            content: "إتقان";
+            position: absolute;
+            right: -20px;
+            bottom: -30px;
+            font-family: 'Amiri', serif;
+            font-size: 14rem;
+            color: rgba(255, 255, 255, 0.02);
+            pointer-events: none;
+            line-height: 1;
+        }
+
+        .hero-banner h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.6rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: #ffffff;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+        }
+
+        .hero-banner p.subtitle {
+            font-size: 1.15rem;
+            color: var(--text-muted);
+            max-width: 850px;
+            line-height: 1.7;
+        }
+
+        .meta-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 1.75rem;
+        }
+
+        .meta-tag {
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 0.35rem 0.85rem;
+            border-radius: 9999px;
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-main);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* Section Styling */
+        .prd-section {
+            margin-bottom: 4.5rem;
+            scroll-margin-top: 90px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.75rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .section-number {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--primary-emerald);
+            background: var(--primary-emerald-glow);
+            padding: 0.4rem 0.9rem;
+            border-radius: 9999px;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .section-header h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2rem;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        /* 8-Point PRD Card Grid */
+        .prd-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 2rem;
+            margin-bottom: 1.75rem;
+            transition: border-color 0.25s ease;
+        }
+
+        .prd-card:hover {
+            border-color: rgba(255, 255, 255, 0.16);
+        }
+
+        .prd-card-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .prd-card-title .arabic {
+            font-family: 'Amiri', serif;
+            font-size: 1.6rem;
+            color: var(--primary-emerald);
+            font-weight: 700;
+        }
+
+        .grid-8point {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.25rem;
+        }
+
         @media (max-width: 900px) {
-            .main-layout {
+            .grid-8point {
                 grid-template-columns: 1fr;
             }
         }
 
-        /* Sidebar Syllabus Navigator */
-        .sidebar {
-            background: var(--card-bg);
-            backdrop-filter: blur(16px);
-            border: 1px solid var(--card-border);
-            border-radius: 24px;
-            padding: 1.5rem;
-            height: fit-content;
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
-        }
-
-        .sidebar-header {
-            margin-bottom: 1.2rem;
-        }
-
-        .sidebar-title {
-            font-size: 1.15rem;
-            font-weight: 700;
-            color: #ffffff;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .progress-bar-container {
-            width: 100%;
-            height: 8px;
-            background: rgba(15, 23, 42, 0.8);
-            border-radius: 10px;
-            margin-top: 0.8rem;
-            overflow: hidden;
+        .spec-box {
+            background: rgba(6, 11, 19, 0.5);
             border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .progress-bar-fill {
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, var(--primary) 0%, var(--emerald) 100%);
             border-radius: 10px;
-            transition: width 0.4s ease;
+            padding: 1.15rem 1.25rem;
         }
 
-        .progress-text {
-            font-size: 0.78rem;
-            color: var(--text-muted);
-            margin-top: 0.4rem;
-            text-align: right;
-            font-family: 'JetBrains Mono', monospace;
-        }
-
-        /* Tier Accordion list */
-        .tier-group {
-            margin-bottom: 0.8rem;
-        }
-
-        .tier-header {
-            width: 100%;
-            padding: 0.75rem 0.9rem;
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid var(--card-border);
-            border-radius: 12px;
-            color: #e2e8f0;
-            font-family: inherit;
-            font-size: 0.88rem;
-            font-weight: 600;
-            text-align: left;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: all 0.2s ease;
-        }
-
-        .tier-header:hover {
-            border-color: var(--primary);
-            background: rgba(99, 102, 241, 0.1);
-        }
-
-        .tier-header.active {
-            border-color: var(--primary);
-            background: rgba(99, 102, 241, 0.18);
-            color: #ffffff;
-        }
-
-        .tier-badge {
-            font-size: 0.7rem;
-            padding: 0.15rem 0.5rem;
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.1);
-            color: #cbd5e1;
-        }
-
-        .minilevel-list {
-            display: flex;
-            flex-direction: column;
-            gap: 0.4rem;
-            padding: 0.6rem 0 0.4rem 0.6rem;
-        }
-
-        .minilevel-btn {
-            padding: 0.55rem 0.8rem;
-            border-radius: 10px;
-            background: transparent;
-            border: 1px solid transparent;
-            color: var(--text-muted);
-            font-family: inherit;
-            font-size: 0.82rem;
-            font-weight: 500;
-            text-align: left;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            transition: all 0.2s ease;
-        }
-
-        .minilevel-btn:hover {
-            color: #ffffff;
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        .minilevel-btn.active {
-            color: #ffffff;
-            background: var(--primary);
-            font-weight: 600;
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
-        }
-
-        .minilevel-btn.completed .check-icon {
-            color: var(--emerald);
-        }
-
-        /* Workspace Content */
-        .workspace {
-            background: var(--card-bg);
-            backdrop-filter: blur(16px);
-            border: 1px solid var(--card-border);
-            border-radius: 24px;
-            padding: 2rem;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4), 0 0 30px var(--primary-glow);
-        }
-
-        .level-header-card {
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid var(--card-border);
-            border-radius: 16px;
-            padding: 1.4rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .level-tag {
-            display: inline-block;
-            padding: 0.3rem 0.75rem;
-            background: rgba(99, 102, 241, 0.18);
-            border: 1px solid rgba(99, 102, 241, 0.4);
-            color: #818cf8;
+        .spec-label {
             font-size: 0.75rem;
             font-weight: 700;
-            letter-spacing: 0.5px;
-            border-radius: 14px;
-            margin-bottom: 0.5rem;
-        }
-
-        .level-title {
-            font-size: 1.6rem;
-            font-weight: 700;
-            color: #ffffff;
-            margin-bottom: 0.4rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--accent-gold);
+            margin-bottom: 0.45rem;
             display: flex;
             align-items: center;
-            gap: 0.8rem;
+            gap: 0.4rem;
         }
 
-        .level-arabic-title {
-            font-family: 'Amiri', serif;
-            color: #a5b4fc;
-            font-size: 1.7rem;
-            font-weight: normal;
-        }
-
-        .level-desc {
-            color: var(--text-muted);
+        .spec-content {
             font-size: 0.92rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        .spec-content strong {
+            color: var(--text-main);
+        }
+
+        /* Pedagogical Principle Badges */
+        .pedagogy-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .pedagogy-item {
+            background: rgba(16, 185, 129, 0.05);
+            border: 1px solid rgba(16, 185, 129, 0.15);
+            border-radius: 10px;
+            padding: 1.15rem;
+        }
+
+        .pedagogy-name {
+            font-weight: 700;
+            color: var(--primary-emerald);
+            font-size: 0.95rem;
+            margin-bottom: 0.35rem;
+        }
+
+        .pedagogy-desc {
+            font-size: 0.88rem;
+            color: var(--text-muted);
             line-height: 1.5;
         }
 
-        .info-pills {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.6rem;
-            margin-top: 1rem;
+        /* Tables & Matrices */
+        .styled-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.25rem 0;
+            background: var(--bg-card);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
         }
 
-        .info-pill {
-            padding: 0.4rem 0.8rem;
-            background: rgba(30, 41, 59, 0.8);
-            border: 1px solid var(--card-border);
-            border-radius: 10px;
+        .styled-table th {
+            background: rgba(255, 255, 255, 0.04);
+            text-align: left;
+            padding: 0.9rem 1.15rem;
             font-size: 0.82rem;
-            color: #cbd5e1;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-sub);
+            border-bottom: 1px solid var(--border-color);
         }
 
-        .info-pill strong {
-            color: #818cf8;
+        .styled-table td {
+            padding: 1rem 1.15rem;
+            font-size: 0.92rem;
+            color: var(--text-muted);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            vertical-align: top;
         }
 
-        /* Practice Drills Selector */
-        .drill-section {
+        .styled-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .styled-table td strong {
+            color: var(--text-main);
+        }
+
+        /* Interactive Prototype Showcase Cards */
+        .interactive-showcase {
+            background: linear-gradient(180deg, #0f1a2e 0%, #0a111e 100%);
+            border: 1px solid rgba(59, 130, 246, 0.25);
+            border-radius: var(--radius-lg);
+            padding: 2.25rem;
+            margin-top: 2rem;
+        }
+
+        .showcase-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 1.5rem;
         }
 
-        .section-label {
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: #cbd5e1;
-            margin-bottom: 0.6rem;
+        .showcase-header h4 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.2rem;
+            color: var(--accent-blue);
+            font-weight: 700;
+        }
+
+        .demo-canvas {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 1.75rem;
+        }
+
+        /* Module Card inside Part 3 */
+        .module-curriculum-card {
+            background: var(--bg-elevated);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            border-radius: 14px;
+            padding: 1.5rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .module-curriculum-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: baseline;
+            margin-bottom: 0.75rem;
         }
 
-        .drill-chips {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.6rem;
-        }
-
-        .drill-chip {
-            padding: 0.6rem 1rem;
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid var(--card-border);
-            border-radius: 12px;
-            font-family: 'Amiri', serif;
-            font-size: 1.3rem;
-            color: #f8fafc;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            direction: rtl;
-        }
-
-        .drill-chip:hover {
-            border-color: var(--primary);
-            background: rgba(99, 102, 241, 0.12);
-        }
-
-        .drill-chip.active {
-            border-color: var(--primary);
-            background: rgba(99, 102, 241, 0.25);
-            box-shadow: 0 0 12px rgba(99, 102, 241, 0.3);
-            color: #ffffff;
-        }
-
-        /* Input Form & Mode Selector */
-        .input-box {
-            width: 100%;
-            padding: 1rem 1.2rem;
-            font-family: 'Amiri', serif;
-            font-size: 1.5rem;
-            color: #ffffff;
-            background: rgba(15, 23, 42, 0.7);
-            border: 1px solid var(--card-border);
-            border-radius: 14px;
-            outline: none;
-            transition: border-color 0.2s ease;
-            direction: rtl;
-            margin-bottom: 1.2rem;
-        }
-
-        .input-box:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 12px rgba(99, 102, 241, 0.3);
-        }
-
-        .tab-switcher {
-            display: flex;
-            background: rgba(15, 23, 42, 0.6);
-            border-radius: 14px;
-            padding: 4px;
-            margin-bottom: 1.2rem;
-            border: 1px solid var(--card-border);
-        }
-
-        .tab-btn {
-            flex: 1;
-            padding: 0.7rem;
-            font-family: inherit;
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            background: transparent;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .tab-btn.active {
-            background: var(--primary);
-            color: #ffffff;
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
-        }
-
-        .upload-card {
-            border: 2px dashed var(--card-border);
-            border-radius: 16px;
-            padding: 1.8rem;
-            text-align: center;
-            transition: all 0.3s ease;
-            background: rgba(15, 23, 42, 0.4);
-            margin-bottom: 1.2rem;
-            cursor: pointer;
-            position: relative;
-        }
-
-        .upload-card:hover {
-            border-color: var(--primary);
-            background: rgba(99, 102, 241, 0.08);
-        }
-
-        input[type="file"] {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0;
-            cursor: pointer;
-        }
-
-        .recorder-card {
-            border: 1px solid var(--card-border);
-            border-radius: 16px;
-            padding: 1.8rem;
-            text-align: center;
-            background: rgba(15, 23, 42, 0.5);
-            margin-bottom: 1.2rem;
-        }
-
-        .rec-status {
-            font-size: 1rem;
-            font-weight: 600;
-            color: #cbd5e1;
-            margin-bottom: 0.4rem;
-        }
-
-        .rec-timer {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 2.2rem;
-            font-weight: 700;
-            color: #ffffff;
-            margin-bottom: 1rem;
-        }
-
-        .rec-controls {
-            display: flex;
-            justify-content: center;
-            gap: 0.8rem;
-        }
-
-        .btn-rec {
-            padding: 0.75rem 1.4rem;
-            font-family: inherit;
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: #ffffff;
-            background: rgba(244, 63, 94, 0.85);
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .btn-rec:hover:not(:disabled) {
-            background: var(--rose);
-            box-shadow: 0 4px 15px rgba(244, 63, 94, 0.4);
-        }
-
-        .btn-stop {
-            padding: 0.75rem 1.4rem;
-            font-family: inherit;
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: #ffffff;
-            background: rgba(71, 85, 105, 0.8);
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .btn-rec:disabled, .btn-stop:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
-
-        .audio-preview {
-            width: 100%;
-            margin-top: 0.8rem;
-            border-radius: 30px;
-            outline: none;
-            display: none;
-        }
-
-        .btn-submit {
-            width: 100%;
-            padding: 1rem;
-            font-family: inherit;
-            font-size: 1rem;
-            font-weight: 600;
-            color: #ffffff;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .btn-submit:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
-        }
-
-        .btn-submit:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .spinner {
-            width: 18px;
-            height: 18px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-top-color: #ffffff;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            display: none;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Results Section */
-        .results-section {
-            margin-top: 2rem;
-            display: none;
-        }
-
-        .results-header {
+        .module-curriculum-header h4 {
             font-size: 1.15rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
             color: #ffffff;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .alignment-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.6rem;
-            margin-bottom: 1.8rem;
-        }
-
-        .char-pill {
-            background: rgba(30, 41, 59, 0.9);
-            border: 1px solid var(--card-border);
-            border-radius: 12px;
-            padding: 0.6rem 0.9rem;
-            text-align: center;
-            min-width: 65px;
-            transition: transform 0.2s ease;
-        }
-
-        .char-pill:hover {
-            transform: translateY(-3px);
-            border-color: var(--primary);
-        }
-
-        .char-symbol {
-            font-family: 'Amiri', serif;
-            font-size: 1.5rem;
             font-weight: 700;
-            color: #818cf8;
         }
 
-        .char-time {
-            font-size: 0.72rem;
+        .module-curriculum-header .badge {
+            font-size: 0.75rem;
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--primary-emerald);
+            padding: 0.25rem 0.65rem;
+            border-radius: 999px;
+            font-weight: 600;
+        }
+
+        .module-curriculum-body {
+            font-size: 0.92rem;
             color: var(--text-muted);
-            font-family: 'JetBrains Mono', monospace;
-            margin-top: 0.2rem;
         }
 
-        .eval-card {
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid var(--card-border);
-            border-radius: 16px;
-            padding: 1.2rem 1.5rem;
-            margin-bottom: 1rem;
+        .module-curriculum-body ul {
+            list-style: none;
+            margin-top: 0.75rem;
             display: flex;
-            align-items: center;
-            justify-content: space-between;
+            flex-direction: column;
+            gap: 0.4rem;
+            padding-left: 1rem;
+            border-left: 2px solid rgba(16, 185, 129, 0.3);
         }
 
-        .eval-card.passed {
-            border-color: rgba(16, 185, 129, 0.4);
-            background: var(--emerald-bg);
-        }
-
-        .eval-card.needs_review {
-            border-color: rgba(244, 63, 94, 0.4);
-            background: var(--rose-bg);
-        }
-
-        .eval-card.uncertain {
-            border-color: rgba(245, 158, 11, 0.4);
-            background: var(--amber-bg);
-        }
-
-        .eval-card.not_applicable {
-            border-color: rgba(148, 163, 184, 0.2);
-            background: rgba(30, 41, 59, 0.4);
-            opacity: 0.75;
-        }
-
-        .rule-name {
-            font-size: 1rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-        }
-
-        .arabic-badge {
-            font-family: 'Amiri', serif;
-            font-size: 1.1rem;
-            color: #a5b4fc;
-            text-transform: none;
-        }
-
-        .status-badge {
-            padding: 0.35rem 0.85rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 700;
-            white-space: nowrap;
-        }
-
-        .status-badge.passed {
-            background: rgba(16, 185, 129, 0.25);
-            color: #34d399;
-            border: 1px solid rgba(16, 185, 129, 0.5);
-        }
-
-        .status-badge.needs_review {
-            background: rgba(244, 63, 94, 0.25);
-            color: #fb7185;
-            border: 1px solid rgba(244, 63, 94, 0.5);
-        }
-
-        .status-badge.uncertain {
-            background: rgba(245, 158, 11, 0.25);
-            color: #fcd34d;
-            border: 1px solid rgba(245, 158, 11, 0.5);
-        }
-
-        .status-badge.not_applicable {
-            background: rgba(148, 163, 184, 0.15);
-            color: #94a3b8;
-            border: 1px solid rgba(148, 163, 184, 0.3);
-        }
-
-        .suggestion-box {
-            margin-top: 0.5rem;
-            padding: 0.55rem 0.85rem;
-            background: rgba(99, 102, 241, 0.12);
-            border-left: 3px solid var(--primary);
-            border-radius: 6px;
-            font-size: 0.88rem;
-            color: #e2e8f0;
-        }
-
-        .metric-val {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.85rem;
-            color: #cbd5e1;
-            margin-top: 0.3rem;
-        }
-
-        .error-banner {
-            background: rgba(239, 68, 68, 0.15);
-            border: 1px solid rgba(239, 68, 68, 0.4);
-            color: #fca5a5;
-            padding: 0.9rem 1.2rem;
-            border-radius: 12px;
-            margin-top: 1rem;
-            font-size: 0.9rem;
-            display: none;
+        .module-curriculum-body ul li strong {
+            color: var(--primary-emerald);
         }
     </style>
 </head>
 <body>
 
-<!-- Top Navigation -->
-<header class="top-nav">
-    <a href="index.html" class="brand-logo">
-        <span class="arabic">إتقان</span>
-        <span>Itqān Architecture</span>
-    </a>
-    <nav class="nav-links">
-        <a href="index.html" class="nav-btn">🎙️ Voice Qari Matcher</a>
-        <a href="tajweed.html" class="nav-btn active">📖 Tajweed Learning Portal</a>
-    </nav>
-</header>
+    <!-- Top Navigation Header -->
+    <header class="top-nav">
+        <a href="index.html" class="brand-logo">
+            <span class="arabic">إتقان</span>
+            <span>Itqān Architecture</span>
+            <span class="prd-badge">PRD v3.0 Master</span>
+        </a>
+        <nav class="nav-links">
+            <a href="index.html" class="nav-btn">🎙️ Voice Qari Matcher</a>
+            <a href="tajweed.html" class="nav-btn active">📖 Tajweed Curriculum & PRD</a>
+        </nav>
+    </header>
 
-<!-- Main Layout Grid -->
-<main class="main-layout">
-    
-    <!-- Sidebar: 6 Tiers & 24 Mini-Levels Navigator -->
-    <aside class="sidebar">
-        <div class="sidebar-header">
-            <div class="sidebar-title">
-                <span>📚 Curriculum Blueprint</span>
-            </div>
-            <div class="progress-bar-container">
-                <div class="progress-bar-fill" id="progressFill"></div>
-            </div>
-            <div class="progress-text" id="progressText">0 / 24 Mastered (0%)</div>
-        </div>
+    <div class="app-container">
+        <!-- Sticky Left Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">Architecture Domain Index</div>
+            <ul class="sidebar-menu">
+                <li><a href="#part-1" class="active"><span>Platform Identity</span><span class="part-num">P01</span></a></li>
+                <li><a href="#part-2"><span>Information Architecture</span><span class="part-num">P02</span></a></li>
+                <li><a href="#part-3"><span>Learning Architecture</span><span class="part-num">P03</span></a></li>
+                <li><a href="#part-4"><span>Learning Components</span><span class="part-num">P04</span></a></li>
+                <li><a href="#part-5"><span>Lesson Blueprint</span><span class="part-num">P05</span></a></li>
+                <li><a href="#part-6"><span>Practice System</span><span class="part-num">P06</span></a></li>
+                <li><a href="#part-7"><span>Progression System</span><span class="part-num">P07</span></a></li>
+                <li><a href="#part-8"><span>AI Teacher Persona</span><span class="part-num">P08</span></a></li>
+                <li><a href="#part-9"><span>Audio Learning System</span><span class="part-num">P09</span></a></li>
+                <li><a href="#part-10"><span>Assessment Framework</span><span class="part-num">P10</span></a></li>
+                <li><a href="#part-11"><span>Progress Dashboard</span><span class="part-num">P11</span></a></li>
+                <li><a href="#part-12"><span>Accessibility</span><span class="part-num">P12</span></a></li>
+                <li><a href="#part-13"><span>Motion & Animation</span><span class="part-num">P13</span></a></li>
+                <li><a href="#part-14"><span>Design System Tokens</span><span class="part-num">P14</span></a></li>
+                <li><a href="#part-15"><span>Scalability & Roadmap</span><span class="part-num">P15</span></a></li>
+            </ul>
+        </aside>
 
-        <div id="tiersContainer">
-            <!-- Tiers rendered by JavaScript -->
-        </div>
-    </aside>
-
-    <!-- Workspace: Active Level Learning & Assessment -->
-    <section class="workspace">
-        <!-- Level Details Card -->
-        <div class="level-header-card">
-            <span class="level-tag" id="levelTag">LEVEL 1.1</span>
-            <h2 class="level-title">
-                <span id="levelTitle">Recitation Etiquette & Initiation</span>
-                <span class="level-arabic-title" id="levelArabicTitle">آداب التلاوة والاستعاذة</span>
-            </h2>
-            <p class="level-desc" id="levelDesc">Instill physical and spiritual readiness for Quranic recitation, including ablution (Wudhu), pure intention (Niyyah), posture facing Qiblah, and initiating with Ta'awwudh and Basmalah.</p>
-            
-            <div class="info-pills">
-                <div class="info-pill" id="pillGoal">🎯 <strong>Goal:</strong> Master initiation formulas</div>
-                <div class="info-pill" id="pillTarget">⏱️ <strong>Target:</strong> Clear character onset & VAD speech energy</div>
-            </div>
-        </div>
-
-        <!-- Practice Drills Selector -->
-        <div class="drill-section">
-            <div class="section-label">
-                <span>📖 Practice Verses & Drills (from INFO.md)</span>
-                <span style="font-weight: 400; font-size: 0.8rem; color: var(--text-muted);">Click to auto-populate text</span>
-            </div>
-            <div class="drill-chips" id="drillChips">
-                <!-- Practice chips rendered dynamically -->
-            </div>
-        </div>
-
-        <!-- Input Form -->
-        <form id="tajweedForm">
-            <input type="text" class="input-box" id="textInput" value="أَعُوذُ بِاللّٰهِ مِنَ الشَّيْطَانِ الرَّجِيمِ" placeholder="Target Quranic text in Arabic..." required>
-
-            <div class="tab-switcher">
-                <button type="button" class="tab-btn active" id="tabUpload">📁 Upload Audio File</button>
-                <button type="button" class="tab-btn" id="tabRecord">🎙️ Record Live Microphone</button>
-            </div>
-
-            <!-- Upload Mode -->
-            <div id="uploadSection">
-                <div class="upload-card">
-                    <div style="font-size: 2rem; margin-bottom: 0.4rem; color: var(--primary);">📁</div>
-                    <p id="uploadPrompt" style="font-weight: 500;">Click or drop recitation audio here</p>
-                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem;">Supports .wav, .mp3, .m4a, .ogg, .webm</p>
-                    <div style="margin-top: 0.4rem; font-weight: 500; color: var(--emerald); font-size: 0.88rem;" id="fileInfo"></div>
-                    <input type="file" id="audioInput" accept="audio/*,.wav,.mp3,.m4a,.ogg,.flac,.webm">
+        <!-- Main Content Pane -->
+        <main class="content-pane">
+            <!-- Hero Banner -->
+            <section class="hero-banner">
+                <h1>Itqān (إتقان) — AI Learning Platform Architecture PRD</h1>
+                <p class="subtitle">
+                    The definitive Product Requirements Document (PRD) and pedagogical blueprint for an AI-native, conversational Tajweed teacher and pronunciation laboratory. This specification establishes the permanent foundation upon which every module, lesson, interactive audio component, AI Wav2Vec2 CTC forced-alignment workflow, and Spaced Repetition engine is engineered.
+                </p>
+                <div class="meta-tags">
+                    <span class="meta-tag">🎯 Mastery-Based Learning</span>
+                    <span class="meta-tag">🎙️ Sub-Second Audio DSP & ASR</span>
+                    <span class="meta-tag">🧠 15 Pedagogical Science Axioms</span>
+                    <span class="meta-tag">🕌 7-Module Curriculum Hierarchy</span>
                 </div>
-            </div>
+            </section>
 
-            <!-- Record Mode -->
-            <div id="recordSection" style="display: none;">
-                <div class="recorder-card">
-                    <div class="rec-status" id="recStatus">Ready to Record</div>
-                    <div class="rec-timer" id="recTimer">00:00</div>
-                    <div class="rec-controls">
-                        <button type="button" class="btn-rec" id="startRecBtn">🔴 Start Recording</button>
-                        <button type="button" class="btn-stop" id="stopRecBtn" disabled>⏹️ Stop</button>
+            <!-- CORE PEDAGOGICAL PRINCIPLES AXIS -->
+            <section class="prd-section" id="pedagogy-foundation">
+                <div class="section-header">
+                    <span class="section-number">Axiom</span>
+                    <h2>15 Pedagogical Learning Science Principles</h2>
+                </div>
+                <p style="color:var(--text-muted); margin-bottom:1.5rem;">
+                    Every screen, interactive audio widget, and AI correction dialog in Itqān derives directly from modern learning science and traditional Quranic <em>Talaqqi</em> (oral transmission):
+                </p>
+                <div class="pedagogy-grid">
+                    <div class="pedagogy-item">
+                        <div class="pedagogy-name">1. Active Recall</div>
+                        <div class="pedagogy-desc">Learners retrieve articulatory rules from memory via audio quizzes rather than passively scanning textbook rules.</div>
+                    </div>
+                    <div class="pedagogy-item">
+                        <div class="pedagogy-name">2. Retrieval Practice</div>
+                        <div class="pedagogy-desc">Frequent low-stakes audio challenges reinforce neural pathways for rapid motor tongue/lip positioning.</div>
+                    </div>
+                    <div class="pedagogy-item">
+                        <div class="pedagogy-name">3. Deliberate Practice</div>
+                        <div class="pedagogy-desc">Focused micro-drills targeting an individual's specific acoustic error boundaries (e.g., Qalqalah rebound timing).</div>
+                    </div>
+                    <div class="pedagogy-item">
+                        <div class="pedagogy-name">4. Mastery Learning</div>
+                        <div class="pedagogy-desc">An 85% Confidence Score threshold is mandatory before progressing to downstream dependent rules.</div>
+                    </div>
+                    <div class="pedagogy-item">
+                        <div class="pedagogy-name">5. Progressive Disclosure</div>
+                        <div class="pedagogy-desc">Rules are revealed in atomic units—starting with Makhaarij before introducing complex Madd durations.</div>
+                    </div>
+                    <div class="pedagogy-item">
+                        <div class="pedagogy-name">6. Cognitive Load Theory</div>
+                        <div class="pedagogy-desc">Eliminates extraneous text; interfaces present only essential anatomical cues and real-time audio waveforms.</div>
+                    </div>
+                    <div class="pedagogy-item">
+                        <div class="pedagogy-name">7. Dual Coding</div>
+                        <div class="pedagogy-desc">Combines auditory Qari master recitations simultaneously with color-coded Uthmani script visual cues.</div>
+                    </div>
+                    <div class="pedagogy-item">
+                        <div class="pedagogy-name">8. Spaced Repetition (SRS)</div>
+                        <div class="pedagogy-desc">An adapted Ebbinghaus exponential decay algorithm schedules rule revisions right before forgetting occurs.</div>
+                    </div>
+                    <div class="pedagogy-item">
+                        <div class="pedagogy-name">9. Immediate Feedback</div>
+                        <div class="pedagogy-desc">Sub-second Wav2Vec2 CTC alignment provides instant character-level diagnostic feedback post-recitation.</div>
+                    </div>
+                    <div class="pedagogy-item">
+                        <div class="pedagogy-name">10. Error-Based Learning</div>
+                        <div class="pedagogy-desc">Mistakes are treated as diagnostic learning moments; punitive red markers are replaced by amber guidance.</div>
+                    </div>
+                    <div class="pedagogy-item">
+                        <div class="pedagogy-name">11. Interleaving</div>
+                        <div class="pedagogy-desc">Mixes different rule categories (e.g., Ghunnah with Qalqalah) during practice to build robust auditory discrimination.</div>
+                    </div>
+                    <div class="pedagogy-item">
+                        <div class="pedagogy-name">12. Scaffolding</div>
+                        <div class="pedagogy-desc">Initial attempts provide full reference audio shadowing; subsequent attempts remove audio prompts as mastery builds.</div>
+                    </div>
+                    <div class="pedagogy-item">
+                        <div class="pedagogy-name">13. Microlearning</div>
+                        <div class="pedagogy-desc">Lessons are compartmentalized into 3-to-5 minute interactive blocks fitting easily into daily devotional routines.</div>
+                    </div>
+                    <div class="pedagogy-item">
+                        <div class="pedagogy-name">14. Experiential Learning</div>
+                        <div class="pedagogy-desc">Learners experiment with breath pressure and vocal tract shaping inside an interactive pronunciation laboratory.</div>
+                    </div>
+                    <div class="pedagogy-item">
+                        <div class="pedagogy-name">15. Intrinsic Motivation</div>
+                        <div class="pedagogy-desc">Grounded in the authentic Hadith that one who struggles with Quranic recitation receives double the divine reward.</div>
                     </div>
                 </div>
-            </div>
+            </section>
 
-            <audio id="audioPreview" class="audio-preview" controls></audio>
-
-            <button type="submit" class="btn-submit" id="submitBtn" disabled>
-                <span class="spinner" id="spinner"></span>
-                <span id="btnText">Analyze Recitation & Tajweed</span>
-            </button>
-        </form>
-
-        <div class="error-banner" id="errorBanner"></div>
-
-        <!-- Assessment Results -->
-        <div class="results-section" id="resultsSection">
-            <div class="results-header">
-                <span>⏱️ Character Forced Alignment Timeline</span>
-                <button type="button" id="markMasteredBtn" style="padding: 0.4rem 0.9rem; background: var(--emerald-bg); border: 1px solid var(--emerald); color: #34d399; font-weight: 600; border-radius: 10px; cursor: pointer;">✓ Mark Level as Mastered</button>
-            </div>
-            <div class="alignment-grid" id="alignmentGrid"></div>
-
-            <div class="results-header">
-                <span>📊 DSP Tajweed Rule Verification</span>
-            </div>
-            <div id="evaluationsContainer"></div>
-        </div>
-    </section>
-
-</main>
-
-<script>
-    // Complete 6-Tier, 24 Mini-Level Curriculum Dataset
-    const SYLLABUS_DATA = [
-        {
-            tier_id: 1,
-            tier_name: "Tier 1: Foundations & Articulation Points",
-            tier_arabic: "المقدمة ومخارج الحروف",
-            levels: [
-                {
-                    id: "1.1",
-                    title: "Recitation Etiquette & Formulas",
-                    arabic: "آداب التلاوة والاستعاذة",
-                    desc: "Instill physical & spiritual readiness for recitation (Wudhu, Niyyah, facing Qiblah). Initiate with Ta'awwudh and Basmalah.",
-                    goal: "Master initiation formulas",
-                    target: "VAD Speech Energy & Clear Onset",
-                    drills: ["أَعُوذُ بِاللّٰهِ مِنَ الشَّيْطَانِ الرَّجِيمِ", "بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيمِ"]
-                },
-                {
-                    id: "1.2",
-                    title: "Makhraj Discovery & Huroof Al-Jawf",
-                    arabic: "طريقة معرفة المخرج وحروف الجوف",
-                    desc: "Apply the Sukoon + Fathah Alif discovery algorithm (اَبْ). Master cavity open elongation letters (ا ، و ، ي).",
-                    goal: "Open mouth cavity resonance",
-                    target: "Formant stability over 0.8s+",
-                    drills: ["نُوحِيهَا", "قَالَ", "فَيَقُولُونَ", "عَذَابٌ مُّهِينٌ"]
-                },
-                {
-                    id: "1.3",
-                    title: "Huroof Halqiyah (Throat Letters)",
-                    arabic: "حروف الحلق الثلاثة",
-                    desc: "Differentiate the 3 throat regions: Deep (ء هـ), Middle (ع ح), and Upper (غ خ).",
-                    goal: "Pharyngeal & Glottal friction",
-                    target: "Clear pharyngeal constriction",
-                    drills: ["مِنْ أَجْلِ", "وَيَنْهَوْنَ", "مَن عَمِلَ", "يَنْحِتُونَ", "مِّنْ غِلٍّ", "وَإِنْ خِفْتُمْ"]
-                },
-                {
-                    id: "1.4",
-                    title: "Lingual Letters - Velar & Palatal",
-                    arabic: "حروف اللسان العلوية والجانبية",
-                    desc: "Master tongue placement for Velar (ق ، ك), Palatal (ج ، ش ، ي), and Lateral Dad (ض).",
-                    goal: "Back-lingual occlusive burst & lateral contact",
-                    target: "Acoustic burst frequency check",
-                    drills: ["الْمَشَارِقِ", "يُدْرِككُّم", "الْجَبَلَ", "الشَّجَرَةُ", "عَلَى الضُّعَفَاءِ"]
-                },
-                {
-                    id: "1.5",
-                    title: "Lingual Letters - Front Tongue",
-                    arabic: "حروف اللسان الأمامية",
-                    desc: "Master tip of tongue positions for Liquids (ل ر ن), Dental (ت د ط), Gingival (ث ذ ظ), and Whistling (س ص ز).",
-                    goal: "Front lingual precision",
-                    target: "High frequency sibilance check",
-                    drills: ["تَجْرِي", "دَانِيَةٌ", "الطَّيْرِ", "الثَّوَابِ", "الذَّكَرُ", "الظَّالِمِ", "الصَّمَدُ"]
-                },
-                {
-                    id: "1.6",
-                    title: "Labial Letters (Lips & Teeth)",
-                    arabic: "حروف الشفتين والأسنان",
-                    desc: "Perfect bilabial closure for (ب ، م) and labiodental friction for (ف).",
-                    goal: "Clean bilabial plosive & friction",
-                    target: "Bilabial stop silent duration",
-                    drills: ["الْبَيْتِ", "الْمَسْجِدِ", "الْفِتْنَةُ"]
-                }
-            ]
-        },
-        {
-            tier_id: 2,
-            tier_name: "Tier 2: Resonance & Heavy/Light Rules",
-            tier_arabic: "صفات الحروف والتفخيم والترقيق",
-            levels: [
-                {
-                    id: "2.1",
-                    title: "Qalqala Echo Mechanics",
-                    arabic: "أحكام القلقلة (قطب جد)",
-                    desc: "Execute crisp echoing bursts on قطب جد when Saakin or at Waqf stop without adding a Fathah.",
-                    goal: "Jerking echo energy burst",
-                    target: "Transient spike < 80ms",
-                    drills: ["خَلَقْتَنِي", "شِهَابٌ ثَاقِبٌ", "إِبْلِيسَ", "زَجْرَةٌ", "جَوْفِهِ", "وَرَبُّ الْمَشَارِقِ"]
-                },
-                {
-                    id: "2.2",
-                    title: "Noon & Meem Mushaddadah",
-                    arabic: "غنة النون والميم المشددتين",
-                    desc: "Hold compulsory 2-Harakah nasal Ghunnah on نّ and مّ with Shaddah.",
-                    goal: "2 Harakaat nasalization",
-                    target: "0.8s - 1.2s nasal energy duration",
-                    drills: ["إِنَّا زَيَّنَّا", "إِنَّ جَهَنَّمَ", "يَمْكُرُونَ", "ثُمَّ قُلْنَا"]
-                },
-                {
-                    id: "2.3",
-                    title: "Laam of Allah (Tafkheem / Tarqeeq)",
-                    arabic: "أحكام لام لفظ الجلالة",
-                    desc: "Pronounce Laam in Allah full-mouth (heavy) after Fathah/Dhammah, and thin-mouth (light) after Kasrah.",
-                    goal: "Heavy vs Light Laam resonance",
-                    target: "F2 formant frequency shift",
-                    drills: ["عِيسَى ابْنُ مَرْيَمَ اللَّهُمَّ", "رَسُولُ اللَّهِ", "بِإِذْنِ اللَّهِ", "يُوَفِّقِ اللَّهُ"]
-                }
-            ]
-        },
-        {
-            tier_id: 3,
-            tier_name: "Tier 3: Rules of Meem Saakin",
-            tier_arabic: "أحكام الميم الساكنة",
-            levels: [
-                {
-                    id: "3.1",
-                    title: "Ikhfa Shafawi (Meem before Baa)",
-                    arabic: "الإخفاء الشفهي",
-                    desc: "Hide Meem Saakin (مْ) at lips with nasal Ghunnah when followed by Baa (ب).",
-                    goal: "Lip contact with nasal flow",
-                    target: "2 Harakaat nasal murmur",
-                    drills: ["أَمْ بِهِ جِنَّةٌ", "تَرْمِيهِم بِحِجَارَةٍ"]
-                },
-                {
-                    id: "3.2",
-                    title: "Idghaam Shafawi (Meem into Meem)",
-                    arabic: "الإدغام الشفهي",
-                    desc: "Merge Meem Saakin (مْ) into Meem Mushaddadah (مّ) into one continuous doubled Meem with Ghunnah.",
-                    goal: "Seamless Meem assimilation",
-                    target: "2 Harakaat unbroken nasalization",
-                    drills: ["وَلَهُم مَّا يَشْتَهُونَ", "كَنْتُم مُّؤْمِنِينَ"]
-                },
-                {
-                    id: "3.3",
-                    title: "Ithaar Shafawi (Clear Meem)",
-                    arabic: "الإظهار الشفهي",
-                    desc: "Pronounce Meem Saakin (مْ) clearly without Ghunnah before any of the remaining 26 letters (especially و and ف).",
-                    goal: "Crisp Meem release",
-                    target: "Duration bounded <= 0.4s",
-                    drills: ["مِن قَبْلِهِمْ وَمَا بَلَغُوا", "أَلَمْ تَرَ", "عَلَيْهِمْ وَلَا"]
-                }
-            ]
-        },
-        {
-            tier_id: 4,
-            tier_name: "Tier 4: Rules of Noon Saakin & Tanween",
-            tier_arabic: "أحكام النون الساكنة والتنوين",
-            levels: [
-                {
-                    id: "4.1",
-                    title: "Ikhfa (15 Concealment Letters)",
-                    arabic: "الإخفاء الحقيقي",
-                    desc: "Conceal Noon Saakin or Tanween with 2-Harakah nasal Ghunnah before ت ث ج د ذ ز س ش ص ض ط ظ ف ق ك.",
-                    goal: "Nasalized hiding transition",
-                    target: "2 Harakaat nasal duration",
-                    drills: ["وَإِن تَغْفِرْ لَهُمْ", "كُلَّ أُنثَىٰ", "أَنجَاكُم", "عَن ذِكْرِ اللَّهِ", "عَلَى الْإِنسَانِ", "إِن شَاءَ اللَّهُ"]
-                },
-                {
-                    id: "4.2",
-                    title: "Ithaar (6 Throat Letters)",
-                    arabic: "الإظهار الحلقي",
-                    desc: "Pronounce Noon Saakin or Tanween clearly without Ghunnah before throat letters (ء ه ع ح غ خ).",
-                    goal: "Crisp N release",
-                    target: "No nasal drag <= 0.4s",
-                    drills: ["وَكَانُوا يَنْحِتُونَ", "وَإِنْ خِفْتُمْ", "مَن عَمِلَ", "مِّنْ غِلٍّ", "مِنْ أَجْلِ", "وَيَنْهَوْنَ"]
-                },
-                {
-                    id: "4.3",
-                    title: "Idghaam with Ghunnah (ي ن م و)",
-                    arabic: "الإدغام بغنة",
-                    desc: "Assimilate Noon Saakin or Tanween into ي ن م و with 2-Harakah nasal Ghunnah.",
-                    goal: "Nasalized assimilation",
-                    target: "2 Harakaat continuous Ghunnah",
-                    drills: ["إِن يَقُولُونَ", "عَدْنٍ يَدْخُلُونَهَا", "عَن مِّلَّةِ", "مِّن وَالٍ", "أَن نَّأْتِيَكُم"]
-                },
-                {
-                    id: "4.4",
-                    title: "Idghaam without Ghunnah & Exceptions",
-                    arabic: "الإدغام بغير غنة والمطلق",
-                    desc: "Complete assimilation into ل and ر without Ghunnah. Recognize single-word exceptions (الدُّنْيَا، بُنْيَانٌ، صِنْوَانٌ، قِنْوَانٌ).",
-                    goal: "Zero Ghunnah on L/R",
-                    target: "No nasal power during merge",
-                    drills: ["مَن لَّوْ يَشَاءُ", "هُدًى لِّلْمُتَّقِينَ", "غَفُورٌ رَّحِيمٌ", "الْحَيَاةَ الدُّنْيَا", "كَأَنَّهُم بُنْيَانٌ"]
-                }
-            ]
-        },
-        {
-            tier_id: 5,
-            tier_name: "Tier 5: Advanced Assimilations & Madd System",
-            tier_arabic: "الإدغام المتقدم وأحكام المد",
-            levels: [
-                {
-                    id: "5.1",
-                    title: "Mithlayn & Mutaqaaribayn",
-                    arabic: "إدغام المثلين والمتقاربين",
-                    desc: "Merge identical Saakin letters into Shaddah (تْ+تّ, دْ+دّ) and close articulation pairs (ق+ك, ب+م, ل+ر, ن+ر).",
-                    goal: "Seamless phoneme merging",
-                    target: "Single geminated onset frame",
-                    drills: ["رَبِحَت تِّجَارَتُهُمْ", "وَقَد دَّخَلُوا", "يُدْرِككُّم", "نَخْلُقكُّم مِّن مَّاءٍ", "ارْكَب مَّعَنَا", "وَقُل رَّبِّ"]
-                },
-                {
-                    id: "5.2",
-                    title: "Comprehensive Rules of Raa",
-                    arabic: "أحكام الراء المفصلة",
-                    desc: "Master heavy (Tafkheem) vs light (Tarqeeq) Raa across all 8 contextual conditions.",
-                    goal: "Heavy vs Light Raa mouth shape",
-                    target: "F3 formant energy tracking",
-                    drills: ["فَمَا رَبِحَت", "عِندَ بَارِئِكُمْ", "أَبْصَارِهِمْ", "تُنذِرْهُمْ", "خَبِيرٌ", "وَتَوَاصَوْا بِالصَّبْرِ"]
-                },
-                {
-                    id: "5.3",
-                    title: "Maddul Asli & Maddul Laazim",
-                    arabic: "المد الأصلي والمد اللازم",
-                    desc: "Differentiate baseline 2-Harakah natural stretch from max 6-Harakah compulsory disjointed Surah opening letters (الم, كهيعص, حم).",
-                    goal: "Natural vs Compulsory stretch",
-                    target: "Exact duration: 2h vs 6h",
-                    drills: ["الم", "كهيعص", "حم عسق", "ق", "ن", "قَالَ إِنَّهُ يَقُولُ"]
-                },
-                {
-                    id: "5.4",
-                    title: "Muttasil, Munfasil & Aaridh",
-                    arabic: "المد المتصل والمنفصل والعارض",
-                    desc: "Master 4-6 Harakaat on Joined Madd (Hamzah same word), 3-5 Harakaat on Detached Madd (Hamzah next word), and Waqf stop Madd.",
-                    goal: "Multi-harakah timing control",
-                    target: "3.5h - 6.5h duration window",
-                    drills: ["سَوَاءٌ عَلَيْهِمْ", "إِنَّا أَنزَلْنَاهُ", "وَاعْلَمُوا أَنَّ اللَّهَ", "جَرْحٌ دُونَهُ أَوْلِيَاءُ"]
-                }
-            ]
-        },
-        {
-            tier_id: 6,
-            tier_name: "Tier 6: Recitation Mastery & Stopping Architecture",
-            tier_arabic: "الوقف والابتداء وسجدات التلاوة",
-            levels: [
-                {
-                    id: "6.1",
-                    title: "Sun & Moon Letters",
-                    arabic: "الحروف الشمسية والقمرية",
-                    desc: "Silent Laam merging on 14 Sun Letters vs clear Laam Saakin on 14 Moon Letters.",
-                    goal: "Definite article phonetics",
-                    target: "Silent vs pronounced Laam alignment",
-                    drills: ["وَالتِّينِ", "يَوْمِ الدِّينِ", "اللَّهُ الصَّمَدُ", "مِنَ الْبَيْتِ", "الْمَغْضُوبِ"]
-                },
-                {
-                    id: "6.2",
-                    title: "Rules of Stopping (Waqf)",
-                    arabic: "أحكام الوقف على أواخر الكلم",
-                    desc: "Convert short ending vowels to Sukoon and transform Tanween Fathah (ً) to single Fathah / Madd 'Iwadh.",
-                    goal: "Word boundary transformation",
-                    target: "Vowel tail truncation at Waqf",
-                    drills: ["إِلَىٰ حِينٍ", "إِنَّكَ لَمَجْنُونٌ", "يَا لَيْتَنِي كُنتُ تُرَابًا", "حُبًّا جَمًّا"]
-                },
-                {
-                    id: "6.3",
-                    title: "Pause Symbols & Saktah",
-                    arabic: "رموز الوقف والسكتة",
-                    desc: "Navigate mandatory stops (م), necessary stops (ط), prohibited stops (لا), and brief silent pauses without breath (سكتة).",
-                    goal: "Quranic notation compliance",
-                    target: "Breathless pause duration frame",
-                    drills: ["مَرْيَمَ إِذِ انْتَبَذَتْ", "كَلَّا بَلْ ۜ رَانَ عَلَىٰ قُلُوبِهِمْ", "أَقِمِ الصَّلَاةَ لِذِكْرِي"]
-                },
-                {
-                    id: "6.4",
-                    title: "Verses of Prostration (Sajdah)",
-                    arabic: "سجدات التلاوة الـ١٤",
-                    desc: "Recognize and execute Sajdah Tilawat upon reciting any of the 14 compulsory Sajdah verses.",
-                    goal: "Sajdah verse identification",
-                    target: "End verse Sajdah trigger",
-                    drills: ["وَيُسَبِّحُونَهُ وَلَهُ يَسْجُدُونَ", "خَرُّوا سُجَّدًا وَسَبَّحُوا", "كَلَّا لَا تُطِعْهُ وَاسْجُدْ وَاقْتَرِبْ"]
-                }
-            ]
-        }
-    ];
-
-    // State
-    let activeLevelId = "1.1";
-    let completedLevels = new Set(JSON.parse(localStorage.getItem('itqan_completed_levels') || '[]'));
-    let activeTab = 'upload';
-    let mediaRecorder;
-    let audioChunks = [];
-    let recordedBlob = null;
-    let timerInterval;
-    let secondsRecorded = 0;
-
-    const API_URL = 'http://localhost:8000/api/v1/tajweed/analyze';
-
-    // DOM Elements
-    const tiersContainer = document.getElementById('tiersContainer');
-    const progressFill = document.getElementById('progressFill');
-    const progressText = document.getElementById('progressText');
-    const levelTag = document.getElementById('levelTag');
-    const levelTitle = document.getElementById('levelTitle');
-    const levelArabicTitle = document.getElementById('levelArabicTitle');
-    const levelDesc = document.getElementById('levelDesc');
-    const pillGoal = document.getElementById('pillGoal');
-    const pillTarget = document.getElementById('pillTarget');
-    const drillChips = document.getElementById('drillChips');
-    const textInput = document.getElementById('textInput');
-    const tabUpload = document.getElementById('tabUpload');
-    const tabRecord = document.getElementById('tabRecord');
-    const uploadSection = document.getElementById('uploadSection');
-    const recordSection = document.getElementById('recordSection');
-    const audioInput = document.getElementById('audioInput');
-    const fileInfo = document.getElementById('fileInfo');
-    const uploadPrompt = document.getElementById('uploadPrompt');
-    const startRecBtn = document.getElementById('startRecBtn');
-    const stopRecBtn = document.getElementById('stopRecBtn');
-    const recStatus = document.getElementById('recStatus');
-    const recTimer = document.getElementById('recTimer');
-    const audioPreview = document.getElementById('audioPreview');
-    const submitBtn = document.getElementById('submitBtn');
-    const btnText = document.getElementById('btnText');
-    const spinner = document.getElementById('spinner');
-    const resultsSection = document.getElementById('resultsSection');
-    const alignmentGrid = document.getElementById('alignmentGrid');
-    const evaluationsContainer = document.getElementById('evaluationsContainer');
-    const errorBanner = document.getElementById('errorBanner');
-    const markMasteredBtn = document.getElementById('markMasteredBtn');
-
-    // Initialize Navigator
-    function initNavigator() {
-        tiersContainer.innerHTML = '';
-        
-        SYLLABUS_DATA.forEach((tier, index) => {
-            const tierGroup = document.createElement('div');
-            tierGroup.className = 'tier-group';
-            
-            const header = document.createElement('button');
-            header.className = `tier-header ${index === 0 ? 'active' : ''}`;
-            header.innerHTML = `
-                <span>${tier.tier_name}</span>
-                <span class="tier-badge">${tier.levels.length} Levels</span>
-            `;
-
-            const minilevelList = document.createElement('div');
-            minilevelList.className = 'minilevel-list';
-            minilevelList.style.display = index === 0 ? 'flex' : 'none';
-
-            tier.levels.forEach(lvl => {
-                const btn = document.createElement('button');
-                btn.className = `minilevel-btn ${lvl.id === activeLevelId ? 'active' : ''} ${completedLevels.has(lvl.id) ? 'completed' : ''}`;
-                btn.dataset.id = lvl.id;
-                btn.innerHTML = `
-                    <span>${lvl.id} ${lvl.title}</span>
-                    <span class="check-icon">${completedLevels.has(lvl.id) ? '✓' : ''}</span>
-                `;
-
-                btn.addEventListener('click', () => {
-                    document.querySelectorAll('.minilevel-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    loadLevel(lvl.id);
-                });
-
-                minilevelList.appendChild(btn);
-            });
-
-            header.addEventListener('click', () => {
-                const isOpen = minilevelList.style.display === 'flex';
-                document.querySelectorAll('.minilevel-list').forEach(l => l.style.display = 'none');
-                document.querySelectorAll('.tier-header').forEach(h => h.classList.remove('active'));
-                
-                if (!isOpen) {
-                    minilevelList.style.display = 'flex';
-                    header.classList.add('active');
-                }
-            });
-
-            tierGroup.appendChild(header);
-            tierGroup.appendChild(minilevelList);
-            tiersContainer.appendChild(tierGroup);
-        });
-
-        updateProgress();
-    }
-
-    function updateProgress() {
-        const total = 24;
-        const count = completedLevels.size;
-        const pct = Math.round((count / total) * 100);
-        progressFill.style.width = `${pct}%`;
-        progressText.textContent = `${count} / ${total} Mastered (${pct}%)`;
-        localStorage.setItem('itqan_completed_levels', JSON.stringify(Array.from(completedLevels)));
-    }
-
-    function getLevelData(id) {
-        for (const tier of SYLLABUS_DATA) {
-            for (const lvl of tier.levels) {
-                if (lvl.id === id) return lvl;
-            }
-        }
-        return SYLLABUS_DATA[0].levels[0];
-    }
-
-    function loadLevel(id) {
-        activeLevelId = id;
-        const lvl = getLevelData(id);
-
-        levelTag.textContent = `LEVEL ${lvl.id}`;
-        levelTitle.textContent = lvl.title;
-        levelArabicTitle.textContent = lvl.arabic;
-        levelDesc.textContent = lvl.desc;
-        pillGoal.innerHTML = `🎯 <strong>Goal:</strong> ${lvl.goal}`;
-        pillTarget.innerHTML = `⏱️ <strong>Target Metric:</strong> ${lvl.target}`;
-
-        // Populate Practice Drills
-        drillChips.innerHTML = '';
-        lvl.drills.forEach((drillText, i) => {
-            const chip = document.createElement('div');
-            chip.className = `drill-chip ${i === 0 ? 'active' : ''}`;
-            chip.textContent = drillText;
-
-            chip.addEventListener('click', () => {
-                document.querySelectorAll('.drill-chip').forEach(c => c.classList.remove('active'));
-                chip.classList.add('active');
-                textInput.value = drillText;
-                checkSubmitReady();
-            });
-
-            drillChips.appendChild(chip);
-        });
-
-        // Set default text input
-        textInput.value = lvl.drills[0] || '';
-        checkSubmitReady();
-
-        // Update Mark Mastered Button text
-        markMasteredBtn.textContent = completedLevels.has(id) ? '✓ Level Mastered' : '+ Mark Level as Mastered';
-    }
-
-    markMasteredBtn.addEventListener('click', () => {
-        if (completedLevels.has(activeLevelId)) {
-            completedLevels.delete(activeLevelId);
-        } else {
-            completedLevels.add(activeLevelId);
-        }
-        updateProgress();
-        initNavigator();
-        loadLevel(activeLevelId);
-    });
-
-    // Tab Switching
-    tabUpload.addEventListener('click', () => {
-        activeTab = 'upload';
-        tabUpload.classList.add('active');
-        tabRecord.classList.remove('active');
-        uploadSection.style.display = 'block';
-        recordSection.style.display = 'none';
-        checkSubmitReady();
-    });
-
-    tabRecord.addEventListener('click', () => {
-        activeTab = 'record';
-        tabRecord.classList.add('active');
-        tabUpload.classList.remove('active');
-        recordSection.style.display = 'block';
-        uploadSection.style.display = 'none';
-        checkSubmitReady();
-    });
-
-    // File Selection
-    audioInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            fileInfo.textContent = `Selected: ${file.name} (${(file.size / (1024 * 1024)).toFixed(2)} MB)`;
-            uploadPrompt.style.display = 'none';
-            audioPreview.src = URL.createObjectURL(file);
-            audioPreview.style.display = 'block';
-            checkSubmitReady();
-        }
-    });
-
-    // Live Recording
-    startRecBtn.addEventListener('click', async () => {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorder = new MediaRecorder(stream);
-            audioChunks = [];
-
-            mediaRecorder.ondataavailable = (e) => {
-                if (e.data.size > 0) audioChunks.push(e.data);
-            };
-
-            mediaRecorder.onstop = () => {
-                recordedBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                audioPreview.src = URL.createObjectURL(recordedBlob);
-                audioPreview.style.display = 'block';
-                recStatus.textContent = '✓ Live Recitation Captured';
-                recStatus.style.color = 'var(--emerald)';
-                checkSubmitReady();
-            };
-
-            mediaRecorder.start();
-            secondsRecorded = 0;
-            recTimer.textContent = '00:00';
-            timerInterval = setInterval(() => {
-                secondsRecorded++;
-                const mins = String(Math.floor(secondsRecorded / 60)).padStart(2, '0');
-                const secs = String(secondsRecorded % 60).padStart(2, '0');
-                recTimer.textContent = `${mins}:${secs}`;
-            }, 1000);
-
-            startRecBtn.disabled = true;
-            stopRecBtn.disabled = false;
-            recStatus.textContent = '🎙️ Recording Recitation...';
-            recStatus.style.color = 'var(--rose)';
-        } catch (err) {
-            alert('Microphone access error: ' + err.message);
-        }
-    });
-
-    stopRecBtn.addEventListener('click', () => {
-        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-            mediaRecorder.stop();
-            mediaRecorder.stream.getTracks().forEach(track => track.stop());
-            clearInterval(timerInterval);
-            startRecBtn.disabled = false;
-            stopRecBtn.disabled = true;
-        }
-    });
-
-    function checkSubmitReady() {
-        const hasText = textInput.value.trim().length > 0;
-        if (activeTab === 'upload' && audioInput.files[0] && hasText) {
-            submitBtn.disabled = false;
-        } else if (activeTab === 'record' && recordedBlob && hasText) {
-            submitBtn.disabled = false;
-        } else {
-            submitBtn.disabled = true;
-        }
-    }
-
-    textInput.addEventListener('input', checkSubmitReady);
-
-    // Submit Assessment Form
-    document.getElementById('tajweedForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        let fileToSend;
-        if (activeTab === 'upload') {
-            fileToSend = audioInput.files[0];
-        } else {
-            if (!recordedBlob) return;
-            fileToSend = new File([recordedBlob], 'live_recitation.webm', { type: 'audio/webm' });
-        }
-
-        const text = textInput.value.trim();
-        if (!fileToSend || !text) return;
-
-        submitBtn.disabled = true;
-        btnText.textContent = 'Analyzing Recitation & Timestamps...';
-        spinner.style.display = 'inline-block';
-        errorBanner.style.display = 'none';
-        resultsSection.style.display = 'none';
-
-        const formData = new FormData();
-        formData.append('file', fileToSend);
-        formData.append('text', text);
-
-        try {
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                body: formData
-            });
-
-            if (!response.ok) {
-                const errData = await response.json().catch(() => ({ detail: response.statusText }));
-                throw new Error(errData.detail || 'Tajweed analysis failed.');
-            }
-
-            const data = await response.json();
-            renderResults(data);
-        } catch (err) {
-            errorBanner.textContent = `Error: ${err.message}`;
-            errorBanner.style.display = 'block';
-        } finally {
-            submitBtn.disabled = false;
-            btnText.textContent = 'Analyze Recitation & Tajweed';
-            spinner.style.display = 'none';
-        }
-    });
-
-    function renderResults(data) {
-        alignmentGrid.innerHTML = '';
-        evaluationsContainer.innerHTML = '';
-        errorBanner.style.display = 'none';
-
-        if (data.status === 'insufficient_speech') {
-            alignmentGrid.innerHTML = '<div style="color:var(--text-muted); font-size:0.9rem; text-align:center; width:100%;">🔇 No timestamps extracted (audio silent).</div>';
-            
-            const card = document.createElement('div');
-            card.className = 'eval-card uncertain';
-            card.style.flexDirection = 'column';
-            card.style.alignItems = 'flex-start';
-            card.style.gap = '0.6rem';
-            card.innerHTML = `
-                <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
-                    <div style="font-size:1.1rem; font-weight:700; color:#fcd34d;">🔇 Silent Audio / Insufficient Speech</div>
-                    <div class="status-badge uncertain">⚠️ VAD GATE WARN</div>
+            <!-- PART 1: PLATFORM IDENTITY -->
+            <section class="prd-section" id="part-1">
+                <div class="section-header">
+                    <span class="section-number">Part 01</span>
+                    <h2>Platform Identity</h2>
                 </div>
-                <div style="font-size:0.9rem; color:#e2e8f0;">${escapeHtml(data.message || 'Speech activity insufficient.')}</div>
-            `;
-            evaluationsContainer.appendChild(card);
-            resultsSection.style.display = 'block';
-            return;
-        }
-
-        // Render Character Alignment Timeline
-        const alignment = data.alignment || [];
-        if (alignment.length === 0) {
-            alignmentGrid.innerHTML = '<div style="color:var(--text-muted); font-size:0.9rem; text-align:center; width:100%;">No character timestamps extracted.</div>';
-        } else {
-            alignment.forEach(item => {
-                const pill = document.createElement('div');
-                pill.className = 'char-pill';
-                pill.innerHTML = `
-                    <div class="char-symbol">${escapeHtml(item.char)}</div>
-                    <div class="char-time">${item.start_time}s - ${item.end_time}s</div>
-                `;
-                alignmentGrid.appendChild(pill);
-            });
-        }
-
-        // Render Rule Verification Cards
-        const evaluations = data.evaluations || [];
-        let allPassed = evaluations.length > 0;
-
-        evaluations.forEach(rule => {
-            const statusClass = rule.status || (rule.applicable ? 'passed' : 'not_applicable');
-            if (rule.applicable && statusClass !== 'passed') allPassed = false;
-
-            let badgeText = '';
-            if (statusClass === 'passed') badgeText = '✓ PASSED';
-            else if (statusClass === 'needs_review') badgeText = '✗ NEEDS REVIEW';
-            else if (statusClass === 'uncertain') badgeText = '⚠️ UNCERTAIN';
-            else badgeText = '– NOT APPLICABLE';
-
-            const card = document.createElement('div');
-            card.className = `eval-card ${statusClass}`;
-            card.innerHTML = `
-                <div style="flex:1; padding-right:1rem;">
-                    <div class="rule-name">
-                        <span>${escapeHtml(rule.rule_name)}</span>
-                        <span class="arabic-badge">${escapeHtml(rule.arabic_name || '')}</span>
+                <div class="prd-card">
+                    <div class="prd-card-title">1.1 Complete Product & Pedagogical Specification</div>
+                    <div class="grid-8point">
+                        <div class="spec-box">
+                            <div class="spec-label">1. Purpose</div>
+                            <div class="spec-content">To democratize authentic Quranic recitation (*Talaqqi*) globally by providing a 24/7 personal AI Tajweed teacher that diagnoses acoustic pronunciation errors with scholarly precision.</div>
+                        </div>
+                        <div class="spec-box">
+                            <div class="spec-label">2. Educational Reasoning</div>
+                            <div class="spec-content">Traditional Tajweed cannot be learned from static textbooks; it requires continuous oral modeling, real-time feedback, and empathetic correction to build subconscious motor memory.</div>
+                        </div>
+                        <div class="spec-box">
+                            <div class="spec-label">3. UX Reasoning</div>
+                            <div class="spec-content">The interface replaces cluttered academic documentation with a serene, conversational companion that guides the learner step-by-step through speech interactions.</div>
+                        </div>
+                        <div class="spec-box">
+                            <div class="spec-label">4. User Journey</div>
+                            <div class="spec-content">A Muslim learner enters with recitation hesitation -> completes a voice baseline assessment -> enters a personalized daily 5-minute practice loop -> graduates with certified *Itqān* proficiency.</div>
+                        </div>
+                        <div class="spec-box">
+                            <div class="spec-label">5. Interaction Flow</div>
+                            <div class="spec-content">Home Dashboard -> Daily Review Prompt -> Interactive Voice Recitation Studio -> Sub-second Diagnostic Card -> Empathetic Audio Tip -> Retry or Mastery Advancement.</div>
+                        </div>
+                        <div class="spec-box">
+                            <div class="spec-label">6. Potential Edge Cases</div>
+                            <div class="spec-content">Learners reciting with regional dialects or background acoustic noise; children with higher vocal pitch formants; advanced reciters requiring strict 0.2s duration tolerances.</div>
+                        </div>
+                        <div class="spec-box">
+                            <div class="spec-label">7. Design Recommendations</div>
+                            <div class="spec-content">Use Midnight Blue dark mode (`#060b13`) to evoke tranquility; strictly prohibit punitive red words; use Emerald Green (`#10b981`) for mastery and Amber (`#f59e0b`) for gentle refinement.</div>
+                        </div>
+                        <div class="spec-box">
+                            <div class="spec-label">8. Future Scalability</div>
+                            <div class="spec-content">Architecture supports expanding from Hafs 'an 'Asim to all 10 Qira'at canonical recitations and integrating live human Sheikh verification for borderline confidence scores.</div>
+                        </div>
                     </div>
-                    <div class="metric-val">
-                        Detected: <strong>${escapeHtml(rule.detected_metric || 'N/A')}</strong> | Expected: ${escapeHtml(rule.expected_metric || 'N/A')}
-                        ${rule.confidence_score ? `<span style="opacity:0.75; font-size:0.8rem; margin-left:0.5rem;">(Confidence: ${rule.confidence_score}%)</span>` : ''}
+                </div>
+            </section>
+
+            <!-- PART 2: INFORMATION ARCHITECTURE -->
+            <section class="prd-section" id="part-2">
+                <div class="section-header">
+                    <span class="section-number">Part 02</span>
+                    <h2>Information Architecture & Navigation Hierarchy</h2>
+                </div>
+                <div class="prd-card">
+                    <div class="prd-card-title">2.1 Navigation Structure & Screen Objectives</div>
+                    <p style="color:var(--text-muted); margin-bottom:1rem;">
+                        The Itqān navigation tree follows progressive disclosure—ensuring every screen answers exactly one question and drives the next learning action:
+                    </p>
+                    <table class="styled-table">
+                        <thead>
+                            <tr>
+                                <th>Screen / Route</th>
+                                <th>Primary Learner Objective</th>
+                                <th>Core UI / Audio Interaction</th>
+                                <th>Relationship to Ecosystem</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>/home (Dashboard)</strong></td>
+                                <td>Answer: "What should I practice today?"</td>
+                                <td>1-Click "Begin Daily Review" hero card + Lantern streak counter.</td>
+                                <td>Root hub connecting Spaced Repetition deck and 7-Module path.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>/path (7-Module Map)</strong></td>
+                                <td>Answer: "Where am I on my Tajweed journey?"</td>
+                                <td>Interactive 7-Module skill tree with visual node unlocking.</td>
+                                <td>Maps global curriculum competencies and prerequisites.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>/studio (Voice Lab)</strong></td>
+                                <td>Answer: "How do I recite this verse correctly?"</td>
+                                <td>Hold-to-record button, real-time VAD wave, and Qari shadowing.</td>
+                                <td>The core pronunciation laboratory where active learning occurs.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>/analysis (Feedback Card)</strong></td>
+                                <td>Answer: "What happened and how do I fix it?"</td>
+                                <td>Color-coded Uthmani word highlights + diagnostic audio tips.</td>
+                                <td>Instant evaluation layer powered by Wav2Vec2 CTC alignment.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>/matcher (Qari Voice Matcher)</strong></td>
+                                <td>Answer: "Which master Qari matches my vocal pitch?"</td>
+                                <td>WavLM x-vector embedding comparison against 242 master Qaris.</td>
+                                <td>Personalizes reference audio to the learner's natural vocal range.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- PART 3: LEARNING ARCHITECTURE -->
+            <section class="prd-section" id="part-3">
+                <div class="section-header">
+                    <span class="section-number">Part 03</span>
+                    <h2>Learning Architecture & 7-Module Curriculum Hierarchy</h2>
+                </div>
+                <p style="color:var(--text-muted); margin-bottom:1.5rem;">
+                    The educational data structure operates across an 8-layer pedagogical hierarchy: <code>Course → Module → Chapter → Lesson → Section → Interaction → Exercise → Assessment</code>. Below is the complete specification of the <strong>7 Tajweed Modules</strong> implemented in the platform:
+                </p>
+
+                <!-- Module 1 -->
+                <div class="module-curriculum-card">
+                    <div class="module-curriculum-header">
+                        <h4>Module 1: Foundations of Recitation</h4>
+                        <span class="badge">Prerequisite: None</span>
                     </div>
-                    ${rule.suggestion ? `<div class="suggestion-box">💡 <strong>Teaching Feedback:</strong> ${escapeHtml(rule.suggestion)}</div>` : ''}
+                    <div class="module-curriculum-body">
+                        This module sets the spiritual and physical groundwork for reading the Qur'an before introducing rules.
+                        <ul>
+                            <li><strong>The Aadaab (Etiquette):</strong> Prerequisites like Wudhu, intention, volume control, and the required opening supplications (<em>Ta'awwuth</em> and <em>Basmalah</em>).</li>
+                            <li><strong>Makhaarij (Places of Origin):</strong> How to find the origin of a letter using a Sukoon and Fathah.</li>
+                            <li><strong>The 7 Groups of Articulation:</strong> Aerial, Guttural, Velar, Palatal, Dental, Gingival, and Labial letters, plus the Liquids and the Tip of the Tongue.</li>
+                        </ul>
+                    </div>
                 </div>
-                <div class="status-badge ${statusClass}">
-                    ${badgeText}
+
+                <!-- Module 2 -->
+                <div class="module-curriculum-card">
+                    <div class="module-curriculum-header">
+                        <h4>Module 2: Letter Characteristics & Pronunciation</h4>
+                        <span class="badge">Prerequisite: Module 1 Mastery</span>
+                    </div>
+                    <div class="module-curriculum-body">
+                        This module introduces the core definition of Tajweed and special rules for specific individual letters.
+                        <ul>
+                            <li><strong>Introduction to Tajweed:</strong> Defining the practice of pronouncing every letter with its articulative qualities.</li>
+                            <li><strong>Qalqala (The Echoing Letters) <span class="arabic">(ق ط ب ج د)</span>:</strong> The rules for reading <strong>ق ط ب ج د</strong> with a jerking sound, and how stopping affects them.</li>
+                            <li><strong>The Rule of Laam <span class="arabic">(ل)</span>:</strong> When to read the name of Allah with a full mouth (heavy) vs. an empty mouth (light), including the exception for Laam Mushaddadah.</li>
+                            <li><strong>The Rule of Raa <span class="arabic">(ر)</span>:</strong> The 8 comprehensive conditions for pronouncing Raa with a full or thin mouth, covering vowels, Sukoon, Shaddah, and stopping rules.</li>
+                        </ul>
+                    </div>
                 </div>
-            `;
-            evaluationsContainer.appendChild(card);
-        });
 
-        // Auto mark level completed if all applicable rules passed
-        if (allPassed && evaluations.length > 0) {
-            completedLevels.add(activeLevelId);
-            updateProgress();
-            initNavigator();
-            loadLevel(activeLevelId);
-        }
+                <!-- Module 3 -->
+                <div class="module-curriculum-card">
+                    <div class="module-curriculum-header">
+                        <h4>Module 3: The Rules of Noon and Meem</h4>
+                        <span class="badge">Prerequisite: Module 2 Mastery</span>
+                    </div>
+                    <div class="module-curriculum-body">
+                        This module focuses heavily on nasalization (<em>Ghunnah</em>) and the most common recurring letters.
+                        <ul>
+                            <li><strong>Noon and Meem Mushaddadah:</strong> The baseline rule for 2-Harakaat nasalization when these letters carry a Shaddah.</li>
+                            <li><strong>The 3 Rules of Meem Saakin <span class="arabic">(مْ)</span>:</strong> Ikhfa Shafawi (with Ba), Idghaam Shafawi (with Meem), and Ithaar Shafawi (remaining 26 letters).</li>
+                            <li><strong>The Rules of Noon Saakin <span class="arabic">(نْ)</span> and Tanween:</strong>
+                                <ul style="margin-top:0.4rem; border-left:none; padding-left:1.5rem;">
+                                    <li><strong>Ikhfa:</strong> The 15 letters causing a light nasal sound.</li>
+                                    <li><strong>Ithaar:</strong> The 6 Huroof Halqiyah (throat letters) causing clear pronunciation without Ghunnah.</li>
+                                    <li><strong>Idghaam:</strong> The merging rules for <strong>ي ن م و</strong> (with Ghunnah) and <strong>ل ر</strong> (without Ghunnah).</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
 
-        resultsSection.style.display = 'block';
-    }
+                <!-- Module 4 -->
+                <div class="module-curriculum-card">
+                    <div class="module-curriculum-header">
+                        <h4>Module 4: Advanced Assimilation (Idghaam)</h4>
+                        <span class="badge">Prerequisite: Module 3 Mastery</span>
+                    </div>
+                    <div class="module-curriculum-body">
+                        This module tackles how specific neighboring letters merge into one another.
+                        <ul>
+                            <li><strong>Idghaam Mithlayn:</strong> The assimilation of two identical letters (e.g., a Saakin letter merging into a Mushaddadah letter of the same kind).</li>
+                            <li><strong>Idghaam Mutaqaaribayn:</strong> The assimilation of letters with similar origins (e.g., ق into ك, or ب into م).</li>
+                        </ul>
+                    </div>
+                </div>
 
-    function escapeHtml(str) {
-        return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    }
+                <!-- Module 5 -->
+                <div class="module-curriculum-card">
+                    <div class="module-curriculum-header">
+                        <h4>Module 5: The Rules of Elongation (Madd)</h4>
+                        <span class="badge">Prerequisite: Module 4 Mastery</span>
+                    </div>
+                    <div class="module-curriculum-body">
+                        This module teaches rhythm, breath control, and proper prolongation of syllables.
+                        <ul>
+                            <li><strong>Huroof-ul-Madd <span class="arabic">(ا ، و ، ي)</span>:</strong> The baseline letters of elongation (ا ، و ، ي).</li>
+                            <li><strong>Maddul Asli:</strong> The original 2-Harakaat elongation.</li>
+                            <li><strong>Maddul Muttasil & Munfasil:</strong> Joined (4-6 Harakaat) vs. Detached (3-5 Harakaat) Madd involving a Hamzah.</li>
+                            <li><strong>Maddul Laazim:</strong> Compulsory 6-Harakaat elongation for disjointed letters (<em>Huroof Muqattaʿat</em>).</li>
+                            <li><strong>Maddul Aaridh:</strong> The 2-to-5 Harakaat elongation caused by an abrupt stop.</li>
+                        </ul>
+                    </div>
+                </div>
 
-    // Run Initialization
-    initNavigator();
-    loadLevel(activeLevelId);
-</script>
+                <!-- Module 6 -->
+                <div class="module-curriculum-card">
+                    <div class="module-curriculum-header">
+                        <h4>Module 6: Connecting Words (Alif-Laam)</h4>
+                        <span class="badge">Prerequisite: Module 5 Mastery</span>
+                    </div>
+                    <div class="module-curriculum-body">
+                        This module covers the flow of reading between definite and indefinite nouns.
+                        <ul>
+                            <li><strong>The Sun Letters <span class="arabic">(حروف شمسية)</span>:</strong> The 14 letters where the Laam (ل) is assimilated and not pronounced.</li>
+                            <li><strong>The Moon Letters <span class="arabic">(حروف قمرية)</span>:</strong> The 14 letters where the Laam (ل) is pronounced clearly as a Saakin.</li>
+                        </ul>
+                    </div>
+                </div>
 
+                <!-- Module 7 -->
+                <div class="module-curriculum-card">
+                    <div class="module-curriculum-header">
+                        <h4>Module 7: Stopping and Prostration</h4>
+                        <span class="badge">Prerequisite: Module 6 Mastery</span>
+                    </div>
+                    <div class="module-curriculum-body">
+                        This final module guides the reciter on how to manage their breath and physical acts of worship during recitation.
+                        <ul>
+                            <li><strong>The Rules of Stopping (Waqf):</strong> How to change short vowels to a Saakin, and how to handle Fathatain or Madd when stopping.</li>
+                            <li><strong>Symbols Denoting Pauses:</strong> A breakdown of symbols like <strong>م</strong> (Compulsory), <strong>ط</strong> (Necessary), and others that dictate reading flow.</li>
+                            <li><strong>Verses of Prostration:</strong> The 14 indexed verses where a Sajdah is required during recitation.</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PART 4: LEARNING COMPONENTS -->
+            <section class="prd-section" id="part-4">
+                <div class="section-header">
+                    <span class="section-number">Part 04</span>
+                    <h2>Reusable Learning Component System</h2>
+                </div>
+                <div class="prd-card">
+                    <div class="prd-card-title">4.1 Audio Studio & Pronunciation Laboratory Component Library</div>
+                    <div class="grid-8point">
+                        <div class="spec-box">
+                            <div class="spec-label">1. Purpose</div>
+                            <div class="spec-content">To provide a standardized library of 14 interactive UI/audio components that content designers compose into lessons without writing ad-hoc code.</div>
+                        </div>
+                        <div class="spec-box">
+                            <div class="spec-label">2. Educational Reasoning</div>
+                            <div class="spec-content">Consistent interaction patterns reduce extraneous cognitive load, allowing working memory to focus entirely on auditory discrimination and vocal tract control.</div>
+                        </div>
+                        <div class="spec-box">
+                            <div class="spec-label">3. UX Reasoning</div>
+                            <div class="spec-content">Modular cards with haptic audio triggers, clear visual states, and touch-optimized hit areas create a seamless mobile-first speech laboratory.</div>
+                        </div>
+                        <div class="spec-box">
+                            <div class="spec-label">4. User Journey</div>
+                            <div class="spec-content">Learner views a <strong>Concept Card</strong> -> explores an <strong>Interactive Anatomical Diagram</strong> -> plays a <strong>Listen & Compare</strong> minimal pair -> records in the <strong>Audio Laboratory</strong> -> receives an <strong>AI Feedback Card</strong>.</div>
+                        </div>
+                        <div class="spec-box">
+                            <div class="spec-label">5. Interaction Flow</div>
+                            <div class="spec-content">Tap to trigger Qari audio -> Hold microphone icon to record PCM/WAV stream -> Release to trigger 500ms AI forced alignment -> Inspect color-coded Uthmani word badges.</div>
+                        </div>
+                        <div class="spec-box">
+                            <div class="spec-label">6. Potential Edge Cases</div>
+                            <div class="spec-content">Microphone permission denials; slow internet connections buffering audio; audio feedback loops if speaker volume is too loud during shadowing.</div>
+                        </div>
+                        <div class="spec-box">
+                            <div class="spec-label">7. Design Recommendations</div>
+                            <div class="spec-content">Enforce a minimum 48x48px touch target for recording buttons; use CSS pulsing glow animations during live audio capture; provide instant audio fallback banners.</div>
+                        </div>
+                        <div class="spec-box">
+                            <div class="spec-label">8. Future Scalability</div>
+                            <div class="spec-content">All components accept JSON-driven props, allowing headless CMS publishing of thousands of Quranic verses without UI redesigns.</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PART 5: UNIVERSAL LESSON BLUEPRINT -->
+            <section class="prd-section" id="part-5">
+                <div class="section-header">
+                    <span class="section-number">Part 05</span>
+                    <h2>Universal Lesson Blueprint</h2>
+                </div>
+                <div class="prd-card">
+                    <div class="prd-card-title">5.1 The 12-Stage Pedagogical Sequence</div>
+                    <table class="styled-table">
+                        <thead>
+                            <tr>
+                                <th>Stage #</th>
+                                <th>Stage Name</th>
+                                <th>Pedagogical Function</th>
+                                <th>Interactive Learner Activity</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>01</strong></td>
+                                <td><strong>Hook</strong></td>
+                                <td>Intrinsic Motivation</td>
+                                <td>Short authentic Hadith on the spiritual reward of reciting this specific rule.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>02</strong></td>
+                                <td><strong>Context</strong></td>
+                                <td>Scaffolding</td>
+                                <td>Positions the rule within the 7-Module tree (e.g., "Today we build on Noon Saakin").</td>
+                            </tr>
+                            <tr>
+                                <td><strong>03</strong></td>
+                                <td><strong>Discovery</strong></td>
+                                <td>Auditory Discrimination</td>
+                                <td>Listen to a correct vs. incorrect recitation pair; identify the difference.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>04</strong></td>
+                                <td><strong>Concept</strong></td>
+                                <td>Microlearning</td>
+                                <td>Atomic 2-sentence phonetic rule explanation without dense scholarly jargon.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>05</strong></td>
+                                <td><strong>Examples</strong></td>
+                                <td>Dual Coding</td>
+                                <td>3 Quranic verse snippets from INFO.md with highlighted target diacritics.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>06</strong></td>
+                                <td><strong>Guided Practice</strong></td>
+                                <td>Scaffolding & Shadowing</td>
+                                <td>Recite simultaneously over the Sheikh's faded reference audio.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>07</strong></td>
+                                <td><strong>Independent Practice</strong></td>
+                                <td>Deliberate Practice</td>
+                                <td>Independent hold-to-record recitation of the target Quranic verse.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>08</strong></td>
+                                <td><strong>AI Evaluation</strong></td>
+                                <td>Immediate Feedback</td>
+                                <td>Sub-second Wav2Vec2 CTC forced alignment + DSP duration & spectral test.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>09</strong></td>
+                                <td><strong>Correction</strong></td>
+                                <td>Error-Based Learning</td>
+                                <td>Amber diagnostic sheet explaining "What happened, Why, and How to fix it."</td>
+                            </tr>
+                            <tr>
+                                <td><strong>10</strong></td>
+                                <td><strong>Reflection</strong></td>
+                                <td>Metacognition</td>
+                                <td>Quick takeaway card summarizing the physical tongue/lip cue.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>11</strong></td>
+                                <td><strong>Quiz / Challenge</strong></td>
+                                <td>Retrieval Practice</td>
+                                <td>A final slightly more complex verse recitation challenge to prove competence.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>12</strong></td>
+                                <td><strong>Completion</strong></td>
+                                <td>Celebration & SRS</td>
+                                <td>XP award, lantern glow streak increment, and rule added to Spaced Repetition deck.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- PART 6: PRACTICE SYSTEM -->
+            <section class="prd-section" id="part-6">
+                <div class="section-header">
+                    <span class="section-number">Part 06</span>
+                    <h2>Independent Practice System & AI Selection Engine</h2>
+                </div>
+                <div class="prd-card">
+                    <div class="prd-card-title">6.1 Spaced Repetition (SRS) & Adaptive Exercise Routing</div>
+                    <div class="grid-8point">
+                        <div class="spec-box">
+                            <div class="spec-label">1. Purpose</div>
+                            <div class="spec-content">To maintain long-term retention across all learned Tajweed rules by serving custom daily practice decks before forgetting occurs.</div>
+                        </div>
+                        <div class="spec-box">
+                            <div class="spec-label">2. Educational Reasoning</div>
+                            <div class="spec-content">Ebbinghaus forgetting curve proves that without spaced retrieval practice, motor articulation rules decay within 14 days of initial learning.</div>
+                        </div>
+                        <div class="spec-box">
+                            <div class="spec-label">3. UX Reasoning</div>
+                            <div class="spec-content">A single 1-Click "Begin Daily Review (5 min)" button removes decision fatigue, automatically serving 3 targeted verses based on weak areas.</div>
+                        </div>
+                        <div class="spec-box">
+                            <div class="spec-label">4. User Journey</div>
+                            <div class="spec-content">Learner opens app -> clicks Daily Review -> recites 3 adaptive verses -> AI updates forgetting curve intervals -> streak increases.</div>
+                        </div>
+                        <div class="spec-box">
+                            <div class="spec-label">5. Interaction Flow</div>
+                            <div class="spec-content">AI queries PostgreSQL `MASTERY` table -> selects rules where `NextReviewDate <= CURRENT_TIMESTAMP` or `ConfidenceScore < 60%` -> renders audio practice loop.</div>
+                        </div>
+                        <div class="spec-box">
+                            <div class="spec-label">6. Potential Edge Cases</div>
+                            <div class="spec-content">Learners who skip practice for 30 days (avoid punishment; gently schedule top 5 foundational refreshers); offline practice queue synchronization.</div>
+                        </div>
+                        <div class="spec-box">
+                            <div class="spec-label">7. Design Recommendations</div>
+                            <div class="spec-content">Provide 6 distinct modes: Daily Practice, Weak Area Drill, Revision Deck, Random Verse Challenge, Custom Chapter Drill, and Timed Endurance Mode.</div>
+                        </div>
+                        <div class="spec-box">
+                            <div class="spec-label">8. Future Scalability</div>
+                            <div class="spec-content">Integrates with **Khatma Mode** (Module 7)—when a learner makes a mistake during open Quranic reading, that rule immediately enters tomorrow's SRS review deck.</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PART 7: PROGRESSION SYSTEM -->
+            <section class="prd-section" id="part-7">
+                <div class="section-header">
+                    <span class="section-number">Part 07</span>
+                    <h2>Progression, Gamification & Skill Trees</h2>
+                </div>
+                <div class="prd-card">
+                    <div class="prd-card-title">7.1 Devotional Gamification & Titles of Itqān</div>
+                    <p style="color:var(--text-muted); margin-bottom:1rem;">
+                        Gamification in Itqān is designed respectfully around Islamic devotion and consistent habit-building rather than superficial addiction:
+                    </p>
+                    <table class="styled-table">
+                        <thead>
+                            <tr>
+                                <th>Progression Mechanism</th>
+                                <th>Islamic / Educational Rationale</th>
+                                <th>Platform Implementation</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Hasanat Points (XP)</strong></td>
+                                <td>Rewards sincere effort and practice time, embodying the Hadith that struggling with recitation earns double reward.</td>
+                                <td>+10 XP per recitation attempt; +50 XP per mastered lesson; zero penalty for mistakes.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Titles of Itqān (Levels)</strong></td>
+                                <td>Replaces arbitrary numerical levels with honored traditional scholarship titles.</td>
+                                <td><strong>مبتدئ</strong> (Mubtadi / Beginner) → <strong>متمهن</strong> (Apprentice) → <strong>متقن</strong> (Proficient) → <strong>ماهر</strong> (Maahir / Master).</td>
+                            </tr>
+                            <tr>
+                                <td><strong>The Glowing Lantern (Streaks)</strong></td>
+                                <td>Encourages daily consistency (*Istiqamah*) without toxic streak-loss anxiety.</td>
+                                <td>Illuminated lantern badge (🏮) that glows brighter with consecutive practice days; includes 2 monthly "grace days."</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Confidence Scores (0–100%)</strong></td>
+                                <td>Provides transparent, competency-based tracking per individual rule node.</td>
+                                <td>Real-time percentage calculated from recent Wav2Vec2 CTC & DSP acoustic evaluations.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>7-Module Skill Tree Map</strong></td>
+                                <td>Visualizes the interconnected dependency graph of Quranic recitation.</td>
+                                <td>Illustrated constellation path leading toward a radiant mosque; nodes unlock upon 85% mastery.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- PART 8: AI TEACHER PERSONA -->
+            <section class="prd-section" id="part-8">
+                <div class="section-header">
+                    <span class="section-number">Part 08</span>
+                    <h2>AI Teacher Persona & Conversational Intelligence</h2>
+                </div>
+                <div class="prd-card">
+                    <div class="prd-card-title">8.1 Empathetic Sheikh Persona & 3-Attempt Frustration Management</div>
+                    <div class="grid-8point">
+                        <div class="spec-box">
+                            <div class="spec-label">1. Purpose</div>
+                            <div class="spec-content">To embody a compassionate, patient, and precise Tajweed scholar who guides learners through encouragement rather than judgment.</div>
+                        </div>
+                        <div class="spec-box">
+                            <div class="spec-label">2. Educational Reasoning</div>
+                            <div class="spec-content">Anxiety impairs motor speech performance; an encouraging persona lowers affective filter and encourages repeated vocal experimentation.</div>
+                        </div>
+                        <div class="spec-box">
+                            <div class="spec-label">3. UX Reasoning</div>
+                            <div class="spec-content">Strict ban on punitive words ("Wrong", "Incorrect", "Failed"); replaces them with constructive amber diagnostic cues and analogies.</div>
+                        </div>
+                        <div class="spec-box">
+                            <div class="spec-label">4. User Journey</div>
+                            <div class="spec-content">Learner makes error -> AI praises effort -> explains specific phonetic cause -> models correction -> offers calm retry attempt.</div>
+                        </div>
+                        <div class="spec-box">
+                            <div class="spec-label">5. Interaction Flow</div>
+                            <div class="spec-content"><strong>3-Attempt Frustration Protocol:</strong> If a learner fails 3 consecutive attempts on a rule, AI pauses recording -> offers a breathing prompt -> plays a slow reference audio -> breaks down the letter in isolation.</div>
+                        </div>
+                        <div class="spec-box">
+                            <div class="spec-label">6. Potential Edge Cases</div>
+                            <div class="spec-content">Learners getting frustrated by technical phonetic terms; AI automatically simplifies explanations using memorable physical analogies.</div>
+                        </div>
+                        <div class="spec-box">
+                            <div class="spec-label">7. Design Recommendations</div>
+                            <div class="spec-content">Use warm, conversational tone; cite authentic Hadiths on patience; use Amber ("Needs Review") badges instead of red "X" icons.</div>
+                        </div>
+                        <div class="spec-box">
+                            <div class="spec-label">8. Future Scalability</div>
+                            <div class="spec-content">Stores conversation memory per user profile, allowing the AI to recall past difficult rules ("Remember how we mastered Ikhfa last week? This follows the same lip placement").</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PART 9: AUDIO LEARNING SYSTEM -->
+            <section class="prd-section" id="part-9">
+                <div class="section-header">
+                    <span class="section-number">Part 09</span>
+                    <h2>Audio Learning System & Pronunciation Laboratory</h2>
+                </div>
+                <div class="prd-card">
+                    <div class="prd-card-title">9.1 Sub-Second DSP & Wav2Vec2 CTC Forced-Alignment Architecture</div>
+                    <table class="styled-table">
+                        <thead>
+                            <tr>
+                                <th>Audio Feature</th>
+                                <th>Pedagogical & DSP Function</th>
+                                <th>Technical Implementation</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Wav2Vec2 CTC Forced Alignment</strong></td>
+                                <td>Aligns speech frames against Uthmani script to verify character start/end timestamps.</td>
+                                <td>Fine-tuned <code>jonatasgrosman/wav2vec2-large-xlsr-53-arabic</code> model executing on PyTorch CUDA GPU.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Harakaat Duration Meter</strong></td>
+                                <td>Measures exact vowel prolongation beats (1 Harakah ≈ 0.45 sec) against theoretical rules.</td>
+                                <td>DSP envelope timestamp delta check; displays a visual green target zone with learner's gold pin.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Qalqalah Rebound Detector</strong></td>
+                                <td>Verifies presence of acoustic burst on Saakin stop letters without adding vowel diacritics.</td>
+                                <td>Spectral RMS burst detection on word endings for letters <strong>ق ط ب ج د</strong>.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Ghunnah Nasal Ratio</strong></td>
+                                <td>Verifies 2-beat nasal resonance on Mushaddad Noon and Meem.</td>
+                                <td>MFCC 200Hz–2000Hz nasal energy ratio calculation over a 1.5s–2.8s window.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Interactive Waveform & Spectrogram</strong></td>
+                                <td>Enables visual comparison of pitch and energy between learner and master Qari.</td>
+                                <td>WebAudio API real-time frequency bar canvas rendering during live microphone recording.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Slow Playback & Loop Mode</strong></td>
+                                <td>Allows auditory inspection of complex transitions (0.75x and 0.5x pitch-preserved speed).</td>
+                                <td>HTML5 Audio API with custom stretch algorithm and A/B loop markers.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- PART 10: ASSESSMENT FRAMEWORK -->
+            <section class="prd-section" id="part-10">
+                <div class="section-header">
+                    <span class="section-number">Part 10</span>
+                    <h2>Assessment Framework & Mistake Taxonomy</h2>
+                </div>
+                <div class="prd-card">
+                    <div class="prd-card-title">10.1 6-Category Diagnostic Error Classification</div>
+                    <p style="color:var(--text-muted); margin-bottom:1rem;">
+                        All pronunciation errors are classified into 6 standardized diagnostic buckets to trigger precise corrective explanations:
+                    </p>
+                    <table class="styled-table">
+                        <thead>
+                            <tr>
+                                <th>Taxonomy Category</th>
+                                <th>Specific Error Example</th>
+                                <th>AI Detection Method</th>
+                                <th>Automated Remediation Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>1. Makhraj (Origin)</strong></td>
+                                <td>Pronouncing Sin (س) instead of Saad (ص).</td>
+                                <td>Levenshtein ASR character distance mismatch.</td>
+                                <td>Displays cross-section diagram showing tongue elevation against posterior palate.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>2. Sifaat (Quality)</strong></td>
+                                <td>Omitting Qalqalah echo burst on stop.</td>
+                                <td>Absence of high-frequency energy rebound.</td>
+                                <td>Triggers 30-second Qalqalah rebounding analogy drill.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>3. Ahkaam - Madd</strong></td>
+                                <td>Holding Maddul Muttasil for only 2 beats instead of 4.</td>
+                                <td>Forced alignment duration < 1.8 seconds.</td>
+                                <td>Displays Harakaat counting bar with visual rhythm pulse.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>4. Ahkaam - Ghunnah</strong></td>
+                                <td>Omitting 2-beat nasalization on Noon Mushaddad.</td>
+                                <td>Nasal band energy ratio drop.</td>
+                                <td>Directs focus to nasal resonance without excessive lip tension.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>5. Waqf - Vowel</strong></td>
+                                <td>Pronouncing final Fathah at sentence stop.</td>
+                                <td>Audio energy detected after final consonant timestamp.</td>
+                                <td>Explains mandatory conversion of final short vowels to Sukoon at Waqf.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>6. Waqf - Breathing</strong></td>
+                                <td>Unlawful respiration pause inside connected word.</td>
+                                <td>Silence interval > 0.4s inside word boundary.</td>
+                                <td>Advises proper breath planning before initiating Quranic phrase.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- PART 11 TO 15 COMPRESSED EXHAUSTIVE PRD SPECS -->
+            <section class="prd-section" id="part-11">
+                <div class="section-header">
+                    <span class="section-number">Part 11 – 15</span>
+                    <h2>Dashboard, Accessibility, Motion, Design System & Scalability</h2>
+                </div>
+                <div class="prd-card">
+                    <div class="prd-card-title">11.1 – 15.1 Core Platform Specifications</div>
+                    <div class="grid-8point">
+                        <div class="spec-box">
+                            <div class="spec-label">Part 11: Progress Dashboard</div>
+                            <div class="spec-content">Provides 360-degree analytics: daily practice streak lantern, rule confidence heatmap (0–100%), historical audio recording library, and weekly pronunciation progress reports.</div>
+                        </div>
+                        <div class="spec-box">
+                            <div class="spec-label">Part 12: Accessibility Framework</div>
+                            <div class="spec-content">Full WCAG 2.1 AA compliance: high-contrast Midnight Blue theme, ARIA labels for audio controls, keyboard shortcut navigation (Spacebar to record), and crisp KFGQPC Hafs Uthmani font scaling.</div>
+                        </div>
+                        <div class="spec-box">
+                            <div class="spec-label">Part 13: Motion & Animation</div>
+                            <div class="spec-content">Deliberate micro-interactions: pulsing emerald waveform during live recording, gold particle shimmer upon 85% mastery, and gentle amber fade-ins for review tips.</div>
+                        </div>
+                        <div class="spec-box">
+                            <div class="spec-label">Part 14: Design System Tokens</div>
+                            <div class="spec-content">Standardized tokens: Colors (`--bg-dark: #060b13`, `--primary-emerald: #10b981`, `--accent-gold: #f59e0b`); Typography (`Outfit` headings, `Inter` UI, `Amiri` Quranic script); 48px minimum touch targets.</div>
+                        </div>
+                        <div class="spec-box">
+                            <div class="spec-label">Part 15: Scalability & Roadmap</div>
+                            <div class="spec-content">Decoupled cloud architecture (FastAPI + PyTorch GPU + S3 + PostgreSQL) supporting: new Tajweed rules, multi-Qari embedding expansion, Hifz memorization engine, and offline PWAs.</div>
+                        </div>
+                        <div class="spec-box">
+                            <div class="spec-label">Official PRD Authority</div>
+                            <div class="spec-content">This document represents the immutable single source of truth for all engineering, design, and educational teams building the Itqān ecosystem.</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        // Smooth scroll & active sidebar link highlighting
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const id = entry.target.getAttribute('id');
+                    document.querySelectorAll('.sidebar-menu a').forEach(link => {
+                        link.classList.toggle('active', link.getAttribute('href') === `#${id}`);
+                    });
+                }
+            });
+        }, { threshold: 0.2 });
+
+        document.querySelectorAll('.prd-section').forEach(section => observer.observe(section));
+    </script>
 </body>
 </html>

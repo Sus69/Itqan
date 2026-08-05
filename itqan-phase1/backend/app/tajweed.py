@@ -109,10 +109,33 @@ def parse_tajweed_rules_from_text(text: str) -> list[dict]:
     Returns a list of rule definitions present in the verse.
     """
     rules_catalog = {
+        "makhaarij_throat": {
+            "name": "Guttural Articulation (Al-Halq)",
+            "arabic": "مخارج الحلق (ء هـ ع ح غ خ)",
+            "tier": 1,
+            "module": 1,
+            "expected_harakaat": "Clear guttural articulation from throat",
+            "min_harakaat": 0.0,
+            "max_harakaat": 0.0,
+            "unit": "pronunciation_quality",
+            "description": "Lower throat (ء، هـ), middle throat (ع، ح), and upper throat (غ، خ)."
+        },
+        "makhaarij_lips": {
+            "name": "Labial Articulation (Ash-Shafatan)",
+            "arabic": "مخارج الشفتين (ب م و ف)",
+            "tier": 1,
+            "module": 1,
+            "expected_harakaat": "Precise lip closure and pressure",
+            "min_harakaat": 0.0,
+            "max_harakaat": 0.0,
+            "unit": "pronunciation_quality",
+            "description": "Lip seal for (ب، م), protrusion for (و), and bottom lip to teeth edge for (ف)."
+        },
         "madd_laazim": {
             "name": "Maddul Laazim (Compulsory Madd)",
             "arabic": "مد لازم (حروف مقطعة)",
             "tier": 5,
+            "module": 4,
             "expected_harakaat": "6 Harakaat (~2.5 - 3.0 sec)",
             "min_harakaat": 5.0,
             "max_harakaat": 7.0,
@@ -123,6 +146,7 @@ def parse_tajweed_rules_from_text(text: str) -> list[dict]:
             "name": "Maddul Muttasil (Joined Madd)",
             "arabic": "مد متصل",
             "tier": 5,
+            "module": 4,
             "expected_harakaat": "4 to 6 Harakaat (~1.8 - 2.5 sec)",
             "min_harakaat": 3.5,
             "max_harakaat": 6.5,
@@ -133,6 +157,7 @@ def parse_tajweed_rules_from_text(text: str) -> list[dict]:
             "name": "Maddul Munfasil (Detached Madd)",
             "arabic": "مد منفصل",
             "tier": 5,
+            "module": 4,
             "expected_harakaat": "3 to 5 Harakaat (~1.3 - 2.2 sec)",
             "min_harakaat": 2.5,
             "max_harakaat": 5.5,
@@ -143,6 +168,7 @@ def parse_tajweed_rules_from_text(text: str) -> list[dict]:
             "name": "Maddul Asli (Original Madd)",
             "arabic": "مد اصلي",
             "tier": 5,
+            "module": 4,
             "expected_harakaat": "2 Harakaat (~0.8 - 1.2 sec)",
             "min_harakaat": 1.5,
             "max_harakaat": 2.8,
@@ -153,6 +179,7 @@ def parse_tajweed_rules_from_text(text: str) -> list[dict]:
             "name": "Maddul Aaridh (Abrupt Stop Madd)",
             "arabic": "مد عارض للسكون",
             "tier": 5,
+            "module": 4,
             "expected_harakaat": "2 to 5 Harakaat (~0.8 - 2.2 sec)",
             "min_harakaat": 1.5,
             "max_harakaat": 5.5,
@@ -163,6 +190,7 @@ def parse_tajweed_rules_from_text(text: str) -> list[dict]:
             "name": "Noon & Meem Mushaddadah (Ghunnah)",
             "arabic": "نون وميم مشددة (غنة)",
             "tier": 2,
+            "module": 3,
             "expected_harakaat": "2 Harakaat (~0.8 - 1.2 sec)",
             "min_harakaat": 1.5,
             "max_harakaat": 2.8,
@@ -173,6 +201,7 @@ def parse_tajweed_rules_from_text(text: str) -> list[dict]:
             "name": "Laam of Allah (Tafkheem / Heavy)",
             "arabic": "لام لفظ الجلالة (مغلظة)",
             "tier": 2,
+            "module": 2,
             "expected_harakaat": "Full mouth pronunciation",
             "min_harakaat": 0.0,
             "max_harakaat": 0.0,
@@ -183,6 +212,7 @@ def parse_tajweed_rules_from_text(text: str) -> list[dict]:
             "name": "Laam of Allah (Tarqeeq / Light)",
             "arabic": "لام لفظ الجلالة (مرققة)",
             "tier": 2,
+            "module": 2,
             "expected_harakaat": "Empty mouth pronunciation",
             "min_harakaat": 0.0,
             "max_harakaat": 0.0,
@@ -193,6 +223,7 @@ def parse_tajweed_rules_from_text(text: str) -> list[dict]:
             "name": "Qalqala (Echoing Sound)",
             "arabic": "قلقلة (قطب جد)",
             "tier": 2,
+            "module": 2,
             "expected_harakaat": "Jerking/Echoing energy burst on Saakin",
             "min_harakaat": 0.0,
             "max_harakaat": 0.0,
@@ -203,6 +234,7 @@ def parse_tajweed_rules_from_text(text: str) -> list[dict]:
             "name": "Ikhfa Shafawi (Meem Saakin)",
             "arabic": "إخفاء شفهي",
             "tier": 3,
+            "module": 3,
             "expected_harakaat": "2 Harakaat light nasal hiding at lips",
             "min_harakaat": 1.5,
             "max_harakaat": 2.8,
@@ -213,6 +245,7 @@ def parse_tajweed_rules_from_text(text: str) -> list[dict]:
             "name": "Idghaam Shafawi (Meem Saakin)",
             "arabic": "إدغام شفهي",
             "tier": 3,
+            "module": 3,
             "expected_harakaat": "2 Harakaat Meem merging",
             "min_harakaat": 1.5,
             "max_harakaat": 2.8,
@@ -223,6 +256,7 @@ def parse_tajweed_rules_from_text(text: str) -> list[dict]:
             "name": "Ithaar Shafawi (Clear Meem Saakin)",
             "arabic": "إظهار شفهي",
             "tier": 3,
+            "module": 3,
             "expected_harakaat": "Clear pronunciation without Ghunnah",
             "min_harakaat": 0.5,
             "max_harakaat": 1.2,
@@ -233,6 +267,7 @@ def parse_tajweed_rules_from_text(text: str) -> list[dict]:
             "name": "Ikhfa (Noon Saakin & Tanween)",
             "arabic": "إخفاء حقيقي",
             "tier": 4,
+            "module": 3,
             "expected_harakaat": "Light nasal sound for 2 Harakaat",
             "min_harakaat": 1.5,
             "max_harakaat": 2.8,
@@ -243,6 +278,7 @@ def parse_tajweed_rules_from_text(text: str) -> list[dict]:
             "name": "Ithaar (Clear Noon Saakin)",
             "arabic": "إظهار حلقي",
             "tier": 4,
+            "module": 3,
             "expected_harakaat": "Clear pronunciation without Ghunnah",
             "min_harakaat": 0.5,
             "max_harakaat": 1.5,
@@ -253,6 +289,7 @@ def parse_tajweed_rules_from_text(text: str) -> list[dict]:
             "name": "Idghaam with Ghunnah",
             "arabic": "إدغام بغنة",
             "tier": 4,
+            "module": 3,
             "expected_harakaat": "2 Harakaat nasal assimilation",
             "min_harakaat": 1.5,
             "max_harakaat": 2.8,
@@ -263,6 +300,7 @@ def parse_tajweed_rules_from_text(text: str) -> list[dict]:
             "name": "Idghaam without Ghunnah",
             "arabic": "إدغام بغير غنة",
             "tier": 4,
+            "module": 3,
             "expected_harakaat": "Complete merging without Ghunnah",
             "min_harakaat": 0.5,
             "max_harakaat": 1.5,
@@ -273,6 +311,7 @@ def parse_tajweed_rules_from_text(text: str) -> list[dict]:
             "name": "Idghaam Mithlayn (Identical Letters)",
             "arabic": "إدغام مثلين",
             "tier": 5,
+            "module": 6,
             "expected_harakaat": "Seamless merging of identical letters",
             "min_harakaat": 0.5,
             "max_harakaat": 2.0,
@@ -283,6 +322,7 @@ def parse_tajweed_rules_from_text(text: str) -> list[dict]:
             "name": "Idghaam Mutaqaaribayn (Nearby Origins)",
             "arabic": "إدغام متقاربين",
             "tier": 5,
+            "module": 6,
             "expected_harakaat": "Assimilation of close articulation letters",
             "min_harakaat": 0.5,
             "max_harakaat": 2.0,
@@ -293,6 +333,7 @@ def parse_tajweed_rules_from_text(text: str) -> list[dict]:
             "name": "Raa Tafkheem (Heavy Raa)",
             "arabic": "راء مفخمة",
             "tier": 5,
+            "module": 2,
             "expected_harakaat": "Full mouth pronunciation",
             "min_harakaat": 0.0,
             "max_harakaat": 0.0,
@@ -303,6 +344,7 @@ def parse_tajweed_rules_from_text(text: str) -> list[dict]:
             "name": "Raa Tarqeeq (Light Raa)",
             "arabic": "راء مرققة",
             "tier": 5,
+            "module": 2,
             "expected_harakaat": "Thin mouth pronunciation",
             "min_harakaat": 0.0,
             "max_harakaat": 0.0,
@@ -313,6 +355,7 @@ def parse_tajweed_rules_from_text(text: str) -> list[dict]:
             "name": "Sun Letters (الحروف الشمسية)",
             "arabic": "حروف شمسية (إدغام اللام)",
             "tier": 6,
+            "module": 2,
             "expected_harakaat": "Silent Laam merged with Shaddah",
             "min_harakaat": 0.0,
             "max_harakaat": 0.0,
@@ -323,14 +366,41 @@ def parse_tajweed_rules_from_text(text: str) -> list[dict]:
             "name": "Moon Letters (الحروف القمرية)",
             "arabic": "حروف قمرية (إظهار اللام)",
             "tier": 6,
+            "module": 2,
             "expected_harakaat": "Clear Laam Saakin pronunciation",
             "min_harakaat": 0.0,
             "max_harakaat": 0.0,
             "unit": "pronunciation_quality",
             "description": "Laam of ال is pronounced clearly as Laam Saakin (لْ)."
+        },
+        "waqf_sukoon": {
+            "name": "Waqf Stop on Sukoon",
+            "arabic": "الوقف بالسكون",
+            "tier": 5,
+            "module": 5,
+            "expected_harakaat": "Clean stopping without vowel addition",
+            "min_harakaat": 0.0,
+            "max_harakaat": 0.0,
+            "unit": "pronunciation_quality",
+            "description": "Final vowel converted to Sukoon (ْ) upon stopping."
+        },
+        "waqf_qalqalah": {
+            "name": "Waqf Stop on Qalqalah",
+            "arabic": "الوقف على قلقلة",
+            "tier": 5,
+            "module": 5,
+            "expected_harakaat": "Echoing energy burst upon stopping",
+            "min_harakaat": 0.0,
+            "max_harakaat": 0.0,
+            "unit": "acoustic_burst",
+            "description": "Stopping on a Qalqalah letter (ق ط ب ج د) at sentence end."
         }
     }
     
+    # Ensure every rule in rules_catalog has a rule_id field
+    for r_key, r_val in rules_catalog.items():
+        r_val["rule_id"] = r_key
+
     detected_rules = []
     
     # 1. Check Huroof Muqatta'at (Maddul Laazim)
@@ -521,6 +591,42 @@ def parse_tajweed_rules_from_text(text: str) -> list[dict]:
             **rules_catalog["moon_letters"]
         })
 
+    # 11. Check Module 1 Makhaarij (Throat & Labial letters)
+    if re.search(r'[ءهعحغخ]', text):
+        matches = list(re.finditer(r'[ءهعحغخ]', text))
+        for m in matches:
+            detected_rules.append({
+                "rule_id": "makhaarij_throat",
+                "char_match": m.group(0),
+                "index": m.start(),
+                **rules_catalog["makhaarij_throat"]
+            })
+    if re.search(r'[بموف]', text):
+        matches = list(re.finditer(r'[بموف]', text))
+        for m in matches:
+            detected_rules.append({
+                "rule_id": "makhaarij_lips",
+                "char_match": m.group(0),
+                "index": m.start(),
+                **rules_catalog["makhaarij_lips"]
+            })
+
+    # 12. Check Module 5 Waqf Stopping rules
+    if re.search(r'ْ$', text.strip()):
+        detected_rules.append({
+            "rule_id": "waqf_sukoon",
+            "char_match": text.strip()[-1],
+            "index": len(text.strip()) - 1,
+            **rules_catalog["waqf_sukoon"]
+        })
+    elif re.search(r'[قطبجد]$', text.strip()):
+        detected_rules.append({
+            "rule_id": "waqf_qalqalah",
+            "char_match": text.strip()[-1],
+            "index": len(text.strip()) - 1,
+            **rules_catalog["waqf_qalqalah"]
+        })
+
     # Deduplicate rules by rule_id (keep highest priority match per rule)
     unique_rules = []
     seen = set()
@@ -545,12 +651,58 @@ class TajweedEvaluator:
         print("TajweedEvaluator Wav2Vec2 CTC model loaded successfully.")
 
     def process_audio(self, file_bytes: bytes, filename: str = "") -> np.ndarray:
-        """Forces all incoming audio bytes to a 16,000 Hz Mono float32 numpy array."""
+        """Forces all incoming audio bytes to a 16,000 Hz Mono float32 numpy array cleanly."""
+        if not file_bytes:
+            raise ValueError("Uploaded file bytes are empty.")
+
+        # Stage 0: Fast & robust FFmpeg decoding via imageio_ffmpeg (supports .webm, .mp3, .m4a, .wav, etc.)
+        try:
+            import subprocess
+            import imageio_ffmpeg
+            ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
+            cmd = [
+                ffmpeg_exe,
+                "-i", "pipe:0",
+                "-f", "s16le",
+                "-acodec", "pcm_s16le",
+                "-ar", "16000",
+                "-ac", "1",
+                "pipe:1"
+            ]
+            proc = subprocess.Popen(
+                cmd,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
+            out, _ = proc.communicate(input=file_bytes)
+            if proc.returncode == 0 and len(out) > 0:
+                audio_int16 = np.frombuffer(out, dtype=np.int16)
+                if len(audio_int16) > 0:
+                    return audio_int16.astype(np.float32) / 32768.0
+        except Exception:
+            pass
+
+        # Try BytesIO librosa load
         try:
             audio_stream = io.BytesIO(file_bytes)
             waveform, _ = librosa.load(audio_stream, sr=16000, mono=True, dtype=np.float32)
             if waveform.size > 0:
                 return waveform
+        except Exception:
+            pass
+
+        # Try soundfile directly
+        try:
+            import soundfile as sf
+            audio_stream = io.BytesIO(file_bytes)
+            data, sr = sf.read(audio_stream, dtype="float32")
+            if data.ndim > 1:
+                data = np.mean(data, axis=1)
+            if sr != 16000 and data.size > 0:
+                data = librosa.resample(data, orig_sr=sr, target_sr=16000)
+            if data.size > 0:
+                return data.astype(np.float32)
         except Exception:
             pass
 
@@ -563,6 +715,7 @@ class TajweedEvaluator:
             tmp_path = Path(tmp.name)
 
         try:
+            # Try torchaudio load
             try:
                 tensor, sr = torchaudio.load(str(tmp_path))
                 if tensor.numel() > 0:
@@ -575,10 +728,15 @@ class TajweedEvaluator:
             except Exception:
                 pass
 
-            waveform, _ = librosa.load(str(tmp_path), sr=16000, mono=True, dtype=np.float32)
-            if waveform.size > 0:
-                return waveform
-            raise ValueError("Audio format could not be decoded.")
+            # Try librosa load from file path
+            try:
+                waveform, _ = librosa.load(str(tmp_path), sr=16000, mono=True, dtype=np.float32)
+                if waveform.size > 0:
+                    return waveform
+            except Exception:
+                pass
+
+            raise ValueError(f"Audio file '{filename}' could not be decoded. Supported formats: .wav, .mp3, .m4a, .ogg, .flac, .webm.")
         finally:
             if tmp_path.exists():
                 try:
@@ -678,31 +836,33 @@ class TajweedEvaluator:
                 "evaluations": []
             }
 
-        # STAGE 1: Phrase Verification Gate
+        # STAGE 1: Phrase Verification Gate (ASR + Levenshtein)
         asr_transcript = self.transcribe_audio(audio_array)
         norm_expected = normalize_arabic_text(target_text)
         norm_detected = normalize_arabic_text(asr_transcript)
         similarity = levenshtein_similarity(norm_expected, norm_detected)
 
-        # Phrase verification threshold: 75% similarity
-        if similarity < 75.0:
+        # STAGE 2: CTC Forced Alignment (Extract timestamps for all valid speech)
+        alignment, align_confidence = self.align_audio(audio_array, target_text)
+
+        # Phrase verification threshold: 60% similarity
+        if similarity < 60.0:
             return {
                 "status": "incorrect_recitation",
-                "message": "Recited phrase does not match the target verse.",
+                "message": "Recited phrase does not match the target verse with sufficient confidence.",
                 "details": {
                     "expected_text": target_text,
                     "normalized_expected": norm_expected,
-                    "detected_text": asr_transcript if asr_transcript else "[Unclear / Silence]",
+                    "detected_text": asr_transcript if asr_transcript else "[Unclear / Low Volume]",
                     "normalized_detected": norm_detected,
                     "similarity_percentage": similarity,
-                    "threshold_required": "75.0%"
+                    "threshold_required": "60.0%"
                 },
                 "audio_duration_seconds": duration,
+                "alignment_confidence": align_confidence,
+                "alignment": alignment,
                 "evaluations": []
             }
-
-        # STAGE 2: CTC Forced Alignment
-        alignment, align_confidence = self.align_audio(audio_array, target_text)
 
         # STAGE 3: Parse Applicable Rules from INFO.md
         present_rules, all_catalog = parse_tajweed_rules_from_text(target_text)

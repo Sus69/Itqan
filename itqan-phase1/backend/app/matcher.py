@@ -64,6 +64,37 @@ class VoiceMatcher:
         .flac, .webm, .aac, .opus, .wma, .amr, .aiff, etc.) and converts them into a
         standardized 16,000 Hz Mono float32 numpy array.
         """
+        if not file_bytes:
+            raise ValueError("Uploaded file bytes are empty.")
+
+        # Stage 0: Fast & robust FFmpeg decoding via imageio_ffmpeg (supports .webm, .mp3, .m4a, .wav, etc.)
+        try:
+            import subprocess
+            import imageio_ffmpeg
+            ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
+            cmd = [
+                ffmpeg_exe,
+                "-i", "pipe:0",
+                "-f", "s16le",
+                "-acodec", "pcm_s16le",
+                "-ar", "16000",
+                "-ac", "1",
+                "pipe:1"
+            ]
+            proc = subprocess.Popen(
+                cmd,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
+            out, _ = proc.communicate(input=file_bytes)
+            if proc.returncode == 0 and len(out) > 0:
+                audio_int16 = np.frombuffer(out, dtype=np.int16)
+                if len(audio_int16) > 0:
+                    return audio_int16.astype(np.float32) / 32768.0
+        except Exception:
+            pass
+
         # Stage 1: In-memory librosa load
         try:
             audio_stream = io.BytesIO(file_bytes)

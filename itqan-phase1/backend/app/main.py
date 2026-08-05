@@ -1,5 +1,6 @@
 import os
 import sys
+import traceback
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -94,6 +95,7 @@ async def recommend_qari(file: UploadFile = File(...)):
         )
 
     except Exception as e:
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Voice matching failed: {str(e)}")
 
 
@@ -125,5 +127,10 @@ async def analyze_tajweed(
 
         return JSONResponse(content=result)
 
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except HTTPException:
+        raise
     except Exception as e:
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Tajweed evaluation failed: {str(e)}")
