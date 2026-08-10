@@ -1,0 +1,165 @@
+@import "tailwindcss";
+
+/* ============================================================
+   Itqān Design System — Light Theme Only
+   Semantic styling per docs/design/design-language.md §18.
+   Themes map color to semantic ROLES, not fixed palettes.
+   ============================================================ */
+
+@theme {
+  /* Brand — deep emerald (primary) + gold (accent) */
+  --color-brand-50: #eef7f1;
+  --color-brand-100: #d7ecdf;
+  --color-brand-200: #b3d9c3;
+  --color-brand-300: #86c1a1;
+  --color-brand-400: #57a37d;
+  --color-brand-500: #368862;
+  --color-brand-600: #266d4d;
+  --color-brand-700: #1f583f;
+  --color-brand-800: #1b4634;
+  --color-brand-900: #143327;
+  --color-brand-950: #0b1f16;
+
+  --color-gold-50: #fbf7ec;
+  --color-gold-100: #f5ecd2;
+  --color-gold-200: #ead7a3;
+  --color-gold-300: #ddbf6f;
+  --color-gold-400: #d0a847;
+  --color-gold-500: #c19334;
+  --color-gold-600: #a5782b;
+  --color-gold-700: #845d26;
+  --color-gold-800: #6d4b25;
+  --color-gold-900: #5b3e22;
+
+  /* Warm neutral sand surfaces */
+  --color-sand-50: #faf9f6;
+  --color-sand-100: #f3f1ea;
+  --color-sand-200: #e6e2d5;
+  --color-sand-300: #d5cfbd;
+  --color-sand-400: #bdb49d;
+  --color-sand-500: #a89c83;
+  --color-sand-600: #8d8269;
+  --color-sand-700: #736a56;
+  --color-sand-800: #5f5849;
+  --color-sand-900: #4f4a3e;
+
+  /* Semantic roles */
+  --color-background: #f4f6f4;         /* app canvas */
+  --color-surface: #ffffff;            /* primary surface */
+  --color-surface-2: #f1f5f1;          /* secondary surface */
+  --color-floating: #ffffff;           /* popovers/cards */
+  --color-ink: #16211b;                /* primary text */
+  --color-ink-soft: #45544b;           /* secondary text */
+  --color-ink-faint: #7d8b81;          /* captions/labels */
+  --color-border: #e2e8e2;             /* hairline borders */
+
+  --color-success: #1f8a4c;
+  --color-success-soft: #e6f4ec;
+  --color-warning: #c07d12;
+  --color-warning-soft: #fbf0da;
+  --color-error: #c2372f;
+  --color-error-soft: #fae7e5;
+  --color-info: #2667c9;
+  --color-info-soft: #e6eefb;
+
+  /* Typography roles */
+  --font-sans: "Outfit", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-arabic: "Noto Naskh Arabic", "Amiri Quran", serif;
+  --font-quran: "Amiri Quran", "Noto Naskh Arabic", serif;
+
+  /* Radii */
+  --radius-xl2: 1.25rem;
+
+  /* Shadows (soft, low-contrast for calm light UI) */
+  --shadow-soft: 0 1px 2px rgb(20 51 39 / 0.05), 0 8px 24px -12px rgb(20 51 39 / 0.18);
+  --shadow-lift: 0 2px 4px rgb(20 51 39 / 0.06), 0 20px 40px -16px rgb(20 51 39 / 0.28);
+  --shadow-ring: 0 0 0 1px rgb(38 109 77 / 0.12);
+}
+
+/* ---------- Base ---------- */
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    @apply bg-background text-ink font-sans;
+    background-image:
+      radial-gradient(at 12% -10%, rgba(38 109 77 / 0.10), transparent 45%),
+      radial-gradient(at 100% 0%, rgba(193 147 52 / 0.08), transparent 40%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+  ::selection {
+    background: var(--color-brand-200);
+    color: var(--color-brand-900);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-brand-500);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  /* Calm, thin scrollbars */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-sand-300) transparent;
+  }
+  *::-webkit-scrollbar { width: 8px; height: 8px; }
+  *::-webkit-scrollbar-thumb { background: var(--color-sand-300); border-radius: 8px; }
+}
+
+/* ---------- Reusable utilities ---------- */
+@layer components {
+  /* Light glass surface (backdrop blur on WHITE, not dark) */
+  .glass {
+    @apply rounded-2xl border border-white/60 bg-white/70 backdrop-blur-xl;
+    box-shadow: var(--shadow-soft);
+  }
+  .glass-soft {
+    @apply rounded-2xl border border-border bg-surface/80 backdrop-blur-md;
+  }
+  .card {
+    @apply rounded-2xl border border-border bg-surface;
+    box-shadow: var(--shadow-soft);
+  }
+  .quran-text {
+    font-family: var(--font-quran);
+    font-feature-settings: "liga";
+    direction: rtl;
+  }
+  .arabic-text {
+    font-family: var(--font-arabic);
+    direction: rtl;
+  }
+}
+
+/* ---------- Motion: purposeful, reduced-motion friendly ---------- */
+@keyframes itq-fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes itq-pop {
+  0% { opacity: 0; transform: scale(0.96); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes itq-pulse-rec {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(194 55 47 / 0.55); }
+  70% { box-shadow: 0 0 0 16px rgba(194 55 47 / 0); }
+}
+@keyframes itq-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes itq-wavebar {
+  0%, 100% { transform: scaleY(0.35); }
+  50% { transform: scaleY(1); }
+}
+
+.anim-fade-up { animation: itq-fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.anim-pop { animation: itq-pop 0.35s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.anim-rec { animation: itq-pulse-rec 1.6s ease-out infinite; }
+.anim-spin { animation: itq-spin 0.9s linear infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-fade-up, .anim-pop, .anim-rec { animation: none; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

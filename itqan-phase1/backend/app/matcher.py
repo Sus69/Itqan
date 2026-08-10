@@ -42,7 +42,21 @@ class VoiceMatcher:
 
         print(f"Loading vector database from {str(db_file)}...")
         with db_file.open("r", encoding="utf-8") as f:
-            self.db_dict = json.load(f)
+            raw_db = json.load(f)
+
+        if "profiles" in raw_db:
+            profiles = raw_db.get("profiles", {})
+            self.db_dict = {}
+            for qari_id, profile in profiles.items():
+                name = profile.get("qari_name")
+                native_embs = profile.get("native_speaker_embeddings", {})
+                vector = native_embs.get("baseline_anchor")
+                if not vector:
+                    vector = profile.get("register_embeddings_768", {}).get("baseline_anchor")
+                if name and vector:
+                    self.db_dict[name] = vector
+        else:
+            self.db_dict = raw_db
 
         self.qari_names = list(self.db_dict.keys())
         matrix_list = [self.db_dict[name] for name in self.qari_names]
