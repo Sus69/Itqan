@@ -21,9 +21,6 @@ export function ColorCodedVerse({ expectedText, alignment }: ColorCodedVerseProp
   const [active, setActive] = useState<number | null>(null);
 
   const segments = useMemo(() => {
-    // The backend strips spaces from alignment chars; rebuild word grouping
-    // from `alignment`, inserting visual gaps at word boundaries of expectedText.
-    // Simple approach: if alignment is empty, render the raw expected text.
     if (!alignment || alignment.length === 0) {
       return [{ text: expectedText, status: 'unscored' as const, note: null as string | null }];
     }
@@ -68,7 +65,10 @@ export function ColorCodedVerse({ expectedText, alignment }: ColorCodedVerseProp
                 {seg.text}
               </span>
               {isInteractive && active === i && seg.note && (
-                <span className="pointer-events-none absolute -top-14 left-1/2 z-10 w-max max-w-56 -translate-x-1/2 rounded-lg bg-ink px-3 py-2 text-center text-[11px] font-medium leading-relaxed text-white shadow-[var(--shadow-lift)]" dir="ltr">
+                <span
+                  className="pointer-events-none absolute -top-14 left-1/2 z-10 w-max max-w-56 -translate-x-1/2 rounded-lg bg-ink px-3 py-2 text-center text-[11px] font-medium leading-relaxed text-white shadow-[var(--shadow-lift)]"
+                  dir="ltr"
+                >
                   {seg.note}
                 </span>
               )}

@@ -78,10 +78,7 @@ class VoiceMatcher:
         .flac, .webm, .aac, .opus, .wma, .amr, .aiff, etc.) and converts them into a
         standardized 16,000 Hz Mono float32 numpy array.
         """
-        if not file_bytes:
-            raise ValueError("Uploaded file bytes are empty.")
-
-        # Stage 0: Fast & robust FFmpeg decoding via imageio_ffmpeg (supports .webm, .mp3, .m4a, .wav, etc.)
+        # Stage 1: Try decoding with FFmpeg via imageio_ffmpeg
         try:
             import subprocess
             import imageio_ffmpeg
@@ -90,9 +87,9 @@ class VoiceMatcher:
                 ffmpeg_exe,
                 "-i", "pipe:0",
                 "-f", "s16le",
-                "-acodec", "pcm_s16le",
-                "-ar", "16000",
                 "-ac", "1",
+                "-ar", "16000",
+                "-acodec", "pcm_s16le",
                 "pipe:1"
             ]
             proc = subprocess.Popen(
@@ -101,15 +98,16 @@ class VoiceMatcher:
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE
             )
-            out, _ = proc.communicate(input=file_bytes)
-            if proc.returncode == 0 and len(out) > 0:
-                audio_int16 = np.frombuffer(out, dtype=np.int16)
-                if len(audio_int16) > 0:
-                    return audio_int16.astype(np.float32) / 32768.0
+            raw_pcm, _ = proc.communicate(input=file_bytes)
+            if proc.returncode == 0 and len(raw_pcm) > 0:
+                audio_int16 = np.frombuffer(raw_pcm, dtype=np.int16)
+                arr = audio_int16.astype(np.float32) / 32768.0
+                if arr.size > 0:
+                    return arr
         except Exception:
             pass
 
-        # Stage 1: In-memory librosa load
+        # Stage 2: In-memory librosa load
         try:
             audio_stream = io.BytesIO(file_bytes)
             waveform, _ = librosa.load(audio_stream, sr=16000, mono=True, dtype=np.float32)
@@ -118,7 +116,7 @@ class VoiceMatcher:
         except Exception:
             pass
 
-        # Stage 2: In-memory soundfile load
+        # Stage 3: In-memory soundfile load
         try:
             audio_stream = io.BytesIO(file_bytes)
             data, sr = sf.read(audio_stream, dtype="float32")
@@ -131,7 +129,7 @@ class VoiceMatcher:
         except Exception:
             pass
 
-        # Stage 3: Tempfile fallback for complex wrappers (.m4a, .webm, .aac, .opus, .wma)
+        # Stage 4: Tempfile fallback
         ext = Path(filename).suffix if filename else ".audio"
         if not ext.startswith("."):
             ext = f".{ext}"
@@ -141,7 +139,6 @@ class VoiceMatcher:
             tmp_path = Path(tmp.name)
 
         try:
-            # 3a. Torchaudio decoder
             try:
                 tensor, sr = torchaudio.load(str(tmp_path))
                 if tensor.numel() > 0:
@@ -156,7 +153,6 @@ class VoiceMatcher:
             except Exception:
                 pass
 
-            # 3b. Librosa path decoder
             waveform, _ = librosa.load(str(tmp_path), sr=16000, mono=True, dtype=np.float32)
             if waveform.size > 0:
                 return waveform

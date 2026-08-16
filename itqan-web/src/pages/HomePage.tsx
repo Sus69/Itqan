@@ -3,18 +3,22 @@ import { PageHeader } from '@/components/PageHeader';
 import { Badge, Button, Card, ProgressBar, SectionHeader } from '@/components/ui';
 import { Icon } from '@/components/Icon';
 import { VERSES } from '@/lib/verses';
+import { useAuth } from '@/lib/authContext';
 
 /**
  * HOM-001 Home Dashboard — designed around continuation, not discovery.
  * Answers one question: "What should I do next?"
  */
 export default function HomePage() {
+  const { user } = useAuth();
   const nextVerse = VERSES[0];
+
+  const displayName = user?.full_name || user?.username || 'Learner';
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Assalamu alaikum, Hafiz"
+        title={`Assalamu alaikum, ${displayName}`}
         subtitle="Here is your next step toward a more confident, beautiful recitation."
       />
 
@@ -62,15 +66,19 @@ export default function HomePage() {
             <div className="mb-3 grid size-12 place-items-center rounded-2xl bg-gold-500 text-white shadow-[var(--shadow-soft)]">
               <Icon name="sparkle" size={22} />
             </div>
-            <h3 className="text-lg font-bold text-ink">Find your reference Qari</h3>
+            <h3 className="text-lg font-bold text-ink">
+              {user?.reference_qari_name ? `Matched Qari: ${user.reference_qari_name}` : 'Find your reference Qari'}
+            </h3>
             <p className="mt-1 text-sm leading-relaxed text-ink-faint">
-              A 30-second voice match personalizes every lesson with a reciter suited to you.
+              {user?.reference_qari_name
+                ? 'Your recitation benchmarks and pronunciation targets are personalized to this Qari.'
+                : 'A 30-second voice match personalizes every lesson with a reciter suited to you.'}
             </p>
           </div>
           <Link to="/practice/voice-match" className="mt-5">
             <Button variant="gold" fullWidth>
               <Icon name="mic" size={17} />
-              Match my voice
+              {user?.reference_qari_name ? 'Change reference Qari' : 'Match my voice'}
             </Button>
           </Link>
         </Card>
@@ -90,10 +98,12 @@ export default function HomePage() {
             </div>
             <div>
               <div className="mb-1.5 flex items-center justify-between text-sm">
-                <span className="font-semibold text-ink">Rules mastered this week</span>
-                <span className="font-bold tabular-nums text-brand-700">2</span>
+                <span className="font-semibold text-ink">Daily Streak</span>
+                <span className="font-bold tabular-nums text-brand-700">
+                  🔥 {user?.streak_days || 0} days
+                </span>
               </div>
-              <ProgressBar value={40} tone="gold" />
+              <ProgressBar value={Math.min(100, ((user?.streak_days || 1) / 30) * 100)} tone="gold" />
             </div>
             <p className="rounded-lg bg-brand-50 px-3 py-2 text-xs font-medium text-brand-800">
               Tip: one focused Tajweed recording a day builds lasting confidence.
@@ -119,8 +129,7 @@ export default function HomePage() {
               title="Qaida"
               body="Learn Arabic reading and articulation from the very beginning."
               to="/learn/qaida"
-              cta="Soon"
-              soon
+              cta="Open"
             />
             <PillarTile
               icon="practice"

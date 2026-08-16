@@ -11,4 +11,16 @@ export default defineConfig({
       '@': path.resolve(import.meta.dirname, './src'),
     },
   },
+  server: {
+    watch: {
+      ignored: [
+        '**/backend/**',
+        '**/data/**',
+        '**/*.db',
+        '**/*.db-*',
+        '**/*.sqlite*',
+        '**/__pycache__/**',
+      ],
+    },
+  },
 })

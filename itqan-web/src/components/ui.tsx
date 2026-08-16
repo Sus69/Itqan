@@ -3,7 +3,7 @@ import { cn } from '@/lib/cn';
 import { Icon } from '@/components/Icon';
 
 /* ---------------- Button ---------------- */
-type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'gold';
+type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'gold' | 'outline';
 type Size = 'sm' | 'md' | 'lg';
 
 const variants: Record<Variant, string> = {
@@ -11,6 +11,8 @@ const variants: Record<Variant, string> = {
     'bg-brand-600 text-white hover:bg-brand-700 active:bg-brand-800 shadow-[var(--shadow-soft)] focus-visible:ring-brand-500',
   secondary:
     'bg-brand-50 text-brand-800 border border-brand-200 hover:bg-brand-100 active:bg-brand-200',
+  outline:
+    'bg-transparent text-ink border border-border hover:bg-sand-100 active:bg-sand-200',
   ghost:
     'bg-transparent text-ink-soft hover:bg-sand-100 active:bg-sand-200',
   danger:
@@ -33,6 +35,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 export function Button({
+  type = 'button',
   variant = 'primary',
   size = 'md',
   loading = false,
@@ -44,6 +47,7 @@ export function Button({
 }: ButtonProps) {
   return (
     <button
+      type={type}
       className={cn(
         'inline-flex select-none items-center justify-center rounded-xl font-semibold transition-all duration-150',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',

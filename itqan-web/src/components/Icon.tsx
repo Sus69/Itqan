@@ -3,13 +3,19 @@ import type { ReactElement, SVGProps } from 'react';
 
 export type IconName =
   | 'home' | 'learn' | 'practice' | 'progress' | 'profile'
-  | 'mic' | 'stop' | 'play' | 'pause' | 'restart' | 'upload'
-  | 'check' | 'alert' | 'info' | 'sparkle' | 'wave' | 'book'
-  | 'mosque' | 'arrowRight' | 'record' | 'close' | 'note';
+  | 'mic' | 'microphone' | 'stop' | 'play' | 'pause' | 'restart' | 'upload'
+  | 'check' | 'alert' | 'info' | 'sparkle' | 'wave' | 'book' | 'lock'
+  | 'mosque' | 'arrowRight' | 'arrowLeft' | 'arrow-left' | 'arrow-right' | 'record' | 'close' | 'note' | 'search' | 'voice';
 
 const stroke = 1.8;
 
 const paths: Record<IconName, ReactElement> = {
+  lock: (
+    <>
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </>
+  ),
   home: (
     <>
       <path d="M3 10.5 12 3l9 7.5" />
@@ -50,6 +56,21 @@ const paths: Record<IconName, ReactElement> = {
       <rect x="9" y="2" width="6" height="11" rx="3" />
       <path d="M5 11a7 7 0 0 0 14 0" />
       <path d="M12 18v4" />
+    </>
+  ),
+  microphone: (
+    <>
+      <rect x="9" y="2" width="6" height="11" rx="3" />
+      <path d="M5 11a7 7 0 0 0 14 0" />
+      <path d="M12 18v4" />
+    </>
+  ),
+  voice: (
+    <>
+      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+      <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+      <line x1="12" y1="19" x2="12" y2="23" />
+      <line x1="8" y1="23" x2="16" y2="23" />
     </>
   ),
   stop: <rect x="6" y="6" width="12" height="12" rx="2" />,
@@ -119,6 +140,24 @@ const paths: Record<IconName, ReactElement> = {
       <path d="m13 6 6 6-6 6" />
     </>
   ),
+  arrowLeft: (
+    <>
+      <path d="M19 12H5" />
+      <path d="m11 18-6-6 6-6" />
+    </>
+  ),
+  'arrow-right': (
+    <>
+      <path d="M5 12h14" />
+      <path d="m13 6 6 6-6 6" />
+    </>
+  ),
+  'arrow-left': (
+    <>
+      <path d="M19 12H5" />
+      <path d="m11 18-6-6 6-6" />
+    </>
+  ),
   record: <circle cx="12" cy="12" r="7" />,
   close: (
     <>
@@ -131,6 +170,12 @@ const paths: Record<IconName, ReactElement> = {
       <path d="M9 18V6l12-3v12" />
       <circle cx="6.5" cy="18" r="2.5" />
       <circle cx="18.5" cy="15" r="2.5" />
+    </>
+  ),
+  search: (
+    <>
+      <circle cx="11" cy="11" r="8" />
+      <path d="m21 21-4.35-4.35" />
     </>
   ),
 };

@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { analyzeTajweed, isInsufficientSpeech, type TajweedResult } from '@/lib/api';
-import { VERSES, type PracticeVerse } from '@/lib/verses';
+import { VERSES, findVerseByIdOrText, type PracticeVerse } from '@/lib/verses';
 import { RecorderPanel } from '@/components/RecorderPanel';
-import { ColorCodedVerse } from '@/components/ColorCodedVerse';
 import { RuleEvaluationCard } from '@/components/RuleEvaluationCard';
 import { Badge, Button, Card, ScoreRing, SectionHeader } from '@/components/ui';
 import { Icon } from '@/components/Icon';
@@ -10,20 +10,69 @@ import { cn } from '@/lib/cn';
 import { formatSeconds } from '@/lib/format';
 
 type Phase = 'select' | 'record' | 'result';
+type DifficultyFilter = 'All' | 'Beginner' | 'Intermediate' | 'Advanced';
 
 export default function TajweedStudioPage() {
-  const [verse, setVerse] = useState<PracticeVerse>(VERSES[0]);
+  const [searchParams] = useSearchParams();
+  const extractTextParam = searchParams.get('extractText');
+  const verseIdParam = searchParams.get('verse');
+
+  const initialVerse = useMemo(() => {
+    const fromParam = findVerseByIdOrText(extractTextParam || verseIdParam);
+    if (fromParam) return fromParam;
+    if (extractTextParam) {
+      return {
+        id: 'custom-extract',
+        surah: 'INFO.md Drill',
+        ayah: 'Extract',
+        arabicName: 'مقتطف تجويدي',
+        text: extractTextParam,
+        focusRules: ['INFO.md Practice Drill'],
+        difficulty: 'Intermediate' as const,
+      };
+    }
+    return VERSES[0];
+  }, [extractTextParam, verseIdParam]);
+
+  const [verse, setVerse] = useState<PracticeVerse>(initialVerse);
   const [phase, setPhase] = useState<Phase>('select');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [difficultyFilter, setDifficultyFilter] = useState<DifficultyFilter>('All');
+
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [speechWarning, setSpeechWarning] = useState<string | null>(null);
   const [result, setResult] = useState<TajweedResult | null>(null);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (initialVerse) {
+      setVerse(initialVerse);
+    }
+  }, [initialVerse]);
+
+  // Filtered verses list
+  const filteredVerses = useMemo(() => {
+    return VERSES.filter((v) => {
+      const matchesDiff = difficultyFilter === 'All' || v.difficulty === difficultyFilter;
+      const q = searchQuery.trim().toLowerCase();
+      if (!q) return matchesDiff;
+      const matchesSearch =
+        v.surah.toLowerCase().includes(q) ||
+        v.ayah.toLowerCase().includes(q) ||
+        v.text.includes(q) ||
+        v.focusRules.some((r) => r.toLowerCase().includes(q));
+      return matchesDiff && matchesSearch;
+    });
+  }, [difficultyFilter, searchQuery]);
 
   const applicableCount = useMemo(
     () => result?.evaluations.filter((e) => e.applicable && e.status !== 'not_applicable') ?? [],
     [result],
   );
-  const passedCount = applicableCount.filter((e) => e.status === 'passed').length;
+  const passedCount = applicableCount.filter(
+    (e) => e.status === 'passed' || (e.confidence_score !== undefined && e.confidence_score >= 95),
+  ).length;
 
   const overallScore = result
     ? Math.round(
@@ -39,6 +88,9 @@ export default function TajweedStudioPage() {
     setError(null);
     setSpeechWarning(null);
     try {
+      const url = URL.createObjectURL(blob);
+      setAudioUrl(url);
+
       const res = await analyzeTajweed(blob, verse.text, fileName);
       if (isInsufficientSpeech(res)) {
         setSpeechWarning(
@@ -52,7 +104,7 @@ export default function TajweedStudioPage() {
       }
     } catch (e) {
       setError(
-        e instanceof Error ? e.message : 'Analysis failed. Ensure the backend server is running.',
+        e instanceof Error ? e.message : 'Analysis failed. Ensure the backend server is running on port 8000.',
       );
     } finally {
       setBusy(false);
@@ -60,37 +112,75 @@ export default function TajweedStudioPage() {
   };
 
   const resetAll = () => {
+    if (audioUrl) {
+      URL.revokeObjectURL(audioUrl);
+      setAudioUrl(null);
+    }
     setResult(null);
     setSpeechWarning(null);
     setError(null);
+    setPhase('select');
   };
 
   return (
     <div className="anim-fade-up space-y-6">
-      {/* Page header (TAJ-001 spirit) */}
+      {/* Page header */}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">
-            Tajweed Studio
+            Tajweed Studio 🎙️
           </h1>
           <p className="mt-1 text-sm text-ink-faint">
-            Recite a verse and receive rule-by-rule AI feedback grounded in authentic Tajweed.
+            Recite any Quranic Aayah and get instant rule-by-rule AI feedback grounded in authentic Tajweed rules.
           </p>
         </div>
         <Badge tone="brand">
-          <Icon name="sparkle" size={13} /> AI Evaluation · 5-Stage Engine
+          <Icon name="sparkle" size={13} /> 20 Aayahs · 5-Stage AI Engine
         </Badge>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,340px)_1fr]">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,360px)_1fr]">
         {/* ---------------- Verse picker (left column) ---------------- */}
-        <Card className="h-fit lg:sticky lg:top-24">
+        <Card className="h-fit space-y-4 lg:sticky lg:top-24 max-h-[85vh] flex flex-col">
           <SectionHeader
-            title="Choose a verse"
-            subtitle="Select what you want to practice"
+            title="Practice Aayahs"
+            subtitle={`${filteredVerses.length} verses · Select an Aayah to recite`}
           />
-          <div className="space-y-2">
-            {VERSES.map((v) => {
+
+          {/* Search bar */}
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search Surah, Ayah, or rule..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full rounded-xl border border-border bg-surface pl-9 pr-3 py-2 text-xs text-ink placeholder:text-ink-faint focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            />
+            <Icon name="search" size={15} className="absolute left-3 top-2.5 text-ink-faint" />
+          </div>
+
+          {/* Difficulty Filter Pills */}
+          <div className="flex flex-wrap items-center gap-1.5 border-b border-border pb-3">
+            {(['All', 'Beginner', 'Intermediate', 'Advanced'] as const).map((diff) => (
+              <button
+                key={diff}
+                type="button"
+                onClick={() => setDifficultyFilter(diff)}
+                className={cn(
+                  'rounded-lg px-2.5 py-1 text-[11px] font-extrabold transition-all',
+                  difficultyFilter === diff
+                    ? 'bg-brand-600 text-white shadow-sm'
+                    : 'bg-surface-2 text-ink-soft hover:bg-brand-50 hover:text-ink',
+                )}
+              >
+                {diff}
+              </button>
+            ))}
+          </div>
+
+          {/* Verses Scroll List */}
+          <div className="space-y-2.5 overflow-y-auto pr-1 flex-1">
+            {filteredVerses.map((v) => {
               const active = v.id === verse.id;
               return (
                 <button
@@ -102,21 +192,49 @@ export default function TajweedStudioPage() {
                     resetAll();
                   }}
                   className={cn(
-                    'w-full rounded-xl border px-4 py-3 text-left transition-all',
+                    'w-full rounded-xl border px-3.5 py-3 text-left transition-all',
                     active
-                      ? 'border-brand-500 bg-brand-50 shadow-[var(--shadow-ring)]'
-                      : 'border-border bg-surface hover:border-brand-300 hover:bg-brand-50/40',
+                      ? 'border-brand-500 bg-brand-50/90 shadow-[var(--shadow-ring)] ring-1 ring-brand-500/30'
+                      : 'border-border bg-surface hover:border-brand-300 hover:bg-brand-50/30',
                   )}
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-bold text-ink">
+                    <span className="text-xs font-bold text-ink truncate">
                       {v.surah} · {v.ayah}
                     </span>
-                    <Badge tone={active ? 'brand' : 'neutral'}>{v.difficulty}</Badge>
+                    <Badge
+                      tone={
+                        v.difficulty === 'Beginner'
+                          ? 'gold'
+                          : v.difficulty === 'Intermediate'
+                            ? 'brand'
+                            : 'neutral'
+                      }
+                      className="text-[10px] px-2 py-0.5 shrink-0"
+                    >
+                      {v.difficulty}
+                    </Badge>
                   </div>
-                  <p className="arabic-text mt-1.5 line-clamp-1 text-base leading-relaxed text-ink-soft" dir="rtl">
+
+                  <p className="quran-text mt-1.5 line-clamp-1 text-right text-sm leading-relaxed text-ink" dir="rtl">
                     {v.text}
                   </p>
+
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {v.focusRules.slice(0, 2).map((r, idx) => (
+                      <span
+                        key={idx}
+                        className="rounded-md bg-surface-2 px-1.5 py-0.5 text-[9px] font-semibold text-ink-faint truncate max-w-[140px]"
+                      >
+                        {r}
+                      </span>
+                    ))}
+                    {v.focusRules.length > 2 && (
+                      <span className="rounded-md bg-surface-2 px-1.5 py-0.5 text-[9px] font-semibold text-ink-faint">
+                        +{v.focusRules.length - 2} rules
+                      </span>
+                    )}
+                  </div>
                 </button>
               );
             })}
@@ -131,7 +249,7 @@ export default function TajweedStudioPage() {
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-widest text-brand-100/80">
-                    Practice target · {verse.surah} {verse.ayah}
+                    PRACTICE TARGET · {verse.surah} {verse.ayah}
                   </p>
                   <p className="mt-1 text-lg font-bold">Recite with focus and calm</p>
                 </div>
@@ -139,6 +257,7 @@ export default function TajweedStudioPage() {
                   <Icon name="book" size={22} className="text-gold-300" />
                 </div>
               </div>
+
               <p
                 className="quran-text mt-5 text-center leading-[2.5] text-white"
                 style={{ fontSize: 'clamp(1.5rem, 2.4vw + 0.5rem, 2.4rem)' }}
@@ -147,25 +266,34 @@ export default function TajweedStudioPage() {
               >
                 {verse.text}
               </p>
-              <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-                {verse.focusRules.map((r) => (
-                  <span
-                    key={r}
-                    className="rounded-full bg-white/12 px-3 py-1 text-[11px] font-semibold text-brand-50 backdrop-blur"
-                  >
-                    {r}
-                  </span>
-                ))}
+
+              {/* All Applicable Rules Badges */}
+              <div className="mt-6 pt-4 border-t border-white/15">
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-gold-300 block mb-2 text-center">
+                  Applicable Tajweed Rules ({verse.focusRules.length})
+                </span>
+                <div className="flex flex-wrap items-center justify-center gap-1.5">
+                  {verse.focusRules.map((r, i) => (
+                    <span
+                      key={i}
+                      className="inline-flex items-center gap-1 rounded-lg bg-white/15 px-3 py-1 text-xs font-bold text-white backdrop-blur border border-white/20"
+                    >
+                      <span className="size-1.5 rounded-full bg-gold-400" />
+                      {r}
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
 
-            <div className="p-5 sm:p-6">
+            <div className="p-6">
               <RecorderPanel
                 onRecorded={handleRecorded}
                 busy={busy}
-                busyLabel="Analyzing recitation…"
-                hint={verse.difficulty}
+                busyLabel="Evaluating recitation with Tajweed Engine…"
+                hint="Recite into your microphone — AI evaluates all applicable rules"
               />
+
               {(error || speechWarning) && (
                 <p
                   className={cn(
@@ -180,112 +308,54 @@ export default function TajweedStudioPage() {
             </div>
           </Card>
 
-          {/* ---------------- Results (TAJ-008 / TAJ-009) ---------------- */}
+          {/* ---------------- Results ---------------- */}
           {phase === 'result' && result && (
             <div className="anim-fade-up space-y-6">
-              {/* Score summary */}
-              <Card className="!!overflow-visible">
-                <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center sm:gap-10">
-                  <ScoreRing value={overallScore} label="Overall" size={132} />
-                  <div className="flex-1 space-y-3">
-                    <h3 className="text-lg font-bold text-ink">
-                      {overallScore >= 85
-                        ? 'Excellent recitation — Masha Allah'
-                        : overallScore >= 60
-                          ? 'Good progress — a few rules to polish'
-                          : 'Keep practicing — your AI teacher is here to help'}
-                    </h3>
-                    <div className="grid gap-3 sm:grid-cols-3">
-                      <MiniMetric
-                        label="Text accuracy"
-                        value={result.phrase_verification.character_accuracy_percentage}
-                      />
-                      <MiniMetric
-                        label="Similarity"
-                        value={result.phrase_verification.similarity_percentage}
-                      />
-                      <MiniMetric label="Alignment" value={result.alignment_confidence} />
-                    </div>
-                    <p className="text-xs text-ink-faint">
-                      {passedCount} of {applicableCount.length} applicable rules passed ·{' '}
-                      {formatSeconds(result.audio_duration_seconds)} of audio
-                    </p>
+              {/* Score ring + summary */}
+              <Card className="flex flex-col items-center gap-6 sm:flex-row sm:items-center sm:gap-8 p-6">
+                <ScoreRing value={overallScore} label="Overall Score" size={136} />
+                <div className="flex-1 space-y-2 text-center sm:text-left">
+                  <Badge tone={overallScore >= 80 ? 'brand' : overallScore >= 60 ? 'gold' : 'neutral'}>
+                    {overallScore >= 80
+                      ? 'Excellent Recitation'
+                      : overallScore >= 60
+                        ? 'Good Recitation'
+                        : 'Needs Refinement'}
+                  </Badge>
+                  <h2 className="text-xl font-bold text-ink">
+                    {passedCount} of {applicableCount.length} applicable rules passed
+                  </h2>
+                  <p className="text-xs text-ink-faint leading-relaxed">
+                    Similarity: {result.phrase_verification.similarity_percentage.toFixed(1)}% ·
+                    Character Accuracy: {result.phrase_verification.character_accuracy_percentage.toFixed(1)}% ·
+                    Audio Duration: {formatSeconds(result.audio_duration_seconds)}
+                  </p>
+                  <div className="pt-2 flex flex-wrap items-center gap-2">
+                    <Button variant="secondary" size="sm" onClick={resetAll}>
+                      <Icon name="restart" size={14} /> Try another Aayah
+                    </Button>
                   </div>
                 </div>
               </Card>
 
-              {/* Color-coded alignment */}
-              <div>
+              {/* Rule-by-rule evaluation list */}
+              <Card className="space-y-4">
                 <SectionHeader
-                  title="Recitation breakdown"
-                  subtitle="Each letter is colored by how clearly it was detected"
+                  title="Tajweed Rule Evaluations"
+                  subtitle={`${applicableCount.length} applicable rules evaluated against authentic INFO.md criteria`}
                 />
-                <ColorCodedVerse
-                  expectedText={result.phrase_verification.expected_text}
-                  alignment={result.alignment}
-                  evaluations={result.evaluations}
-                />
-              </div>
-
-              {/* Rule-by-rule */}
-              <div>
-                <SectionHeader
-                  title="Tajweed rules"
-                  subtitle="Expand any rule to see what the AI teacher recommends"
-                  action={
-                    <Badge tone="brand">
-                      {applicableCount.length} active rule{applicableCount.length === 1 ? '' : 's'}
-                    </Badge>
-                  }
-                />
-                <div className="space-y-2.5">
+                <div className="space-y-3">
                   {result.evaluations
-                    .filter((e) => e.applicable)
-                    .map((evaluation) => (
-                      <RuleEvaluationCard key={evaluation.rule_id} evaluation={evaluation} />
+                    .filter((ev) => ev.applicable && ev.status !== 'not_applicable')
+                    .map((ev, idx) => (
+                      <RuleEvaluationCard key={ev.rule_id + idx} evaluation={ev} />
                     ))}
-                  {result.evaluations.filter((e) => e.applicable).length === 0 && (
-                    <Card className="py-8 text-center text-sm text-ink-faint">
-                      No applicable Tajweed rules were parsed for this verse.
-                    </Card>
-                  )}
                 </div>
-              </div>
-
-              {/* Next actions */}
-              <div className="flex flex-wrap justify-center gap-3 pt-2">
-                <Button variant="secondary" onClick={resetAll}>
-                  <Icon name="restart" size={17} />
-                  Record again
-                </Button>
-                <Button
-                  variant="primary"
-                  onClick={() => {
-                    const idx = VERSES.findIndex((v) => v.id === verse.id);
-                    const next = VERSES[(idx + 1) % VERSES.length];
-                    setVerse(next);
-                    resetAll();
-                  }}
-                >
-                  Next verse
-                  <Icon name="arrowRight" size={17} />
-                </Button>
-              </div>
+              </Card>
             </div>
           )}
         </div>
       </div>
-    </div>
-  );
-}
-
-function MiniMetric({ label, value }: { label: string; value: number }) {
-  const v = Math.max(0, Math.min(100, value));
-  const tone = v >= 85 ? 'text-success' : v >= 60 ? 'text-warning' : 'text-error';
-  return (
-    <div className="rounded-xl border border-border bg-surface-2 px-3.5 py-2.5">
-      <p className={cn('text-xl font-extrabold tabular-nums', tone)}>{Math.round(v)}%</p>
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">{label}</p>
     </div>
   );
 }

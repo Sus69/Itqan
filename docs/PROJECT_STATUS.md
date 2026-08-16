@@ -23,13 +23,13 @@ This document details all **completed work** and outlines what **remains to be b
 - [x] **Automated Audio Dataset Harvester** ([cell3.py](file:///c:/Users/manaa/Documents/appagent/Itq%C4%81n/cell3.py)): Built a web scraper and dataset pipeline to ingest recitations across 6,236 Ayahs.
 - [x] **WavLM Speaker Vector Extraction** ([cell3.py](file:///c:/Users/manaa/Documents/appagent/Itq%C4%81n/cell3.py)): Integrated `microsoft/wavlm-base-plus-sv` to extract 512/768-dimensional speaker x-vector embeddings.
 - [x] **242-Qari Master Ledger** ([master_vector_matrix.json](file:///c:/Users/manaa/Documents/appagent/Itq%C4%81n/master_vector_matrix.json)): Extracted baseline anchor embeddings for **242 Qaris**.
-- [x] **Vector Database Converter** ([convert_matrix_to_db.py](file:///c:/Users/manaa/Documents/appagent/Itq%C4%81n/convert_matrix_to_db.py)): Built a script converting raw master vectors into an optimized lookup database ([vector_db.json](file:///c:/Users/manaa/Documents/appagent/Itq%C4%81n/itqan-phase1/backend/data/vector_db.json)).
+- [x] **Vector Database Converter** ([convert_matrix_to_db.py](file:///c:/Users/manaa/Documents/appagent/Itq%C4%81n/convert_matrix_to_db.py)): Built a script converting raw master vectors into an optimized lookup database ([vector_db.json](file:///c:/Users/manaa/Documents/appagent/Itq%C4%81n/itqan-web/backend/data/vector_db.json)).
 - [x] **GPU Environment & Persistence Topology** ([cell1.py](file:///c:/Users/manaa/Documents/appagent/Itq%C4%81n/cell1.py), [cell2.py](file:///c:/Users/manaa/Documents/appagent/Itq%C4%81n/cell2.py)): Configured PyTorch CUDA 12.1 environment, system audio decoders (`ffmpeg`, `libsndfile1`, `torchaudio`, `librosa`, `soundfile`), and drive storage with idempotent profile ledgers.
 
 ---
 
 ### 1.2 FastAPI Backend Application Architecture
-- [x] **FastAPI Core Server** ([main.py](file:///c:/Users/manaa/Documents/appagent/Itq%C4%81n/itqan-phase1/backend/app/main.py)): Built FastAPI `v2.0.0` server with asynchronous lifespan handlers.
+- [x] **FastAPI Core Server** ([main.py](file:///c:/Users/manaa/Documents/appagent/Itq%C4%81n/itqan-web/backend/app/main.py)): Built FastAPI `v2.0.0` server with asynchronous lifespan handlers.
 - [x] **Warm Model Startup**: Configured pre-loading of ML models (`VoiceMatcher` and `TajweedEvaluator`) into RAM/GPU at server boot for low-latency inference.
 - [x] **CORS & Form Data Handlers**: Integrated middleware to process cross-origin multipart requests.
 - [x] **Health Check Route** (`GET /health`): End-point returning live system status, model state, and Qari database matrix metrics (242 Qaris loaded).
@@ -37,15 +37,15 @@ This document details all **completed work** and outlines what **remains to be b
 ---
 
 ### 1.3 Voice Qari Matching Engine
-- [x] **Universal 3-Tier Audio Decoder** ([matcher.py](file:///c:/Users/manaa/Documents/appagent/Itq%C4%81n/itqan-phase1/backend/app/matcher.py)): Implemented a 3-tier fallback decoder handling all audio formats (`.wav`, `.mp3`, `.m4a`, `.ogg`, `.flac`, `.webm`, `.aac`, `.opus`, `.wma`, `.amr`, `.aiff`, etc.) into standardized **16kHz Mono float32** arrays.
-- [x] **Live Feature Extraction** ([matcher.py](file:///c:/Users/manaa/Documents/appagent/Itq%C4%81n/itqan-phase1/backend/app/matcher.py)): Passes user audio through WavLM speaker verification model to compute L2-normalized 512-dim x-vectors.
-- [x] **In-Memory Cosine Search** ([matcher.py](file:///c:/Users/manaa/Documents/appagent/Itq%C4%81n/itqan-phase1/backend/app/matcher.py)): Fast matrix cosine similarity search against 242 stored Qaris in memory using `scikit-learn`.
+- [x] **Universal 3-Tier Audio Decoder** ([matcher.py](file:///c:/Users/manaa/Documents/appagent/Itq%C4%81n/itqan-web/backend/app/matcher.py)): Implemented a 3-tier fallback decoder handling all audio formats (`.wav`, `.mp3`, `.m4a`, `.ogg`, `.flac`, `.webm`, `.aac`, `.opus`, `.wma`, `.amr`, `.aiff`, etc.) into standardized **16kHz Mono float32** arrays.
+- [x] **Live Feature Extraction** ([matcher.py](file:///c:/Users/manaa/Documents/appagent/Itq%C4%81n/itqan-web/backend/app/matcher.py)): Passes user audio through WavLM speaker verification model to compute L2-normalized 512-dim x-vectors.
+- [x] **In-Memory Cosine Search** ([matcher.py](file:///c:/Users/manaa/Documents/appagent/Itq%C4%81n/itqan-web/backend/app/matcher.py)): Fast matrix cosine similarity search against 242 stored Qaris in memory using `scikit-learn`.
 - [x] **Qari Recommendation API** (`POST /api/v1/matcher/recommend`): Endpoint accepting audio upload and returning top confidence-scored Qari matches.
 
 ---
 
 ### 1.4 Tajweed Evaluation Engine (Aligned with INFO.md)
-- [x] **Tajweed Rule Parser** ([tajweed.py](file:///c:/Users/manaa/Documents/appagent/Itq%C4%81n/itqan-phase1/backend/app/tajweed.py)): Built rule parsing logic directly aligned with [INFO.md](file:///c:/Users/manaa/Documents/appagent/Itq%C4%81n/docs/INFO.md) covering:
+- [x] **Tajweed Rule Parser** ([tajweed.py](file:///c:/Users/manaa/Documents/appagent/Itq%C4%81n/itqan-web/backend/app/tajweed.py)): Built rule parsing logic directly aligned with [INFO.md](file:///c:/Users/manaa/Documents/appagent/Itq%C4%81n/docs/INFO.md) covering:
   - **Qalqala**: Echoing sound on **ق ط ب ج د** carrying Sukoon or at Waqf stops.
   - **Noon & Meem Mushaddadah**: Ghunnah nasalization for 2 Harakaat on **نّ** and **مّ**.
   - **Rule of Laam (ل)**: Heavy/Tafkheem (preceded by Fathah/Dhammah) vs Light/Tarqeeq (preceded by Kasrah), plus Laam Mushaddadah exception.
@@ -53,7 +53,7 @@ This document details all **completed work** and outlines what **remains to be b
   - **Noon Saakin & Tanween Rules**: Ikhfa (15 letters), Ithaar (6 throat letters), Idghaam with Ghunnah (**ي ن م و**), Idghaam without Ghunnah (**ل ، ر**).
   - **Madd Rules**: Maddul Laazim (6 Harakaat), Maddul Muttasil (4-6 Harakaat), Maddul Munfasil (3-5 Harakaat), Maddul Asli (2 Harakaat), Maddul Aaridh (2-5 Harakaat).
   - **Other Rules**: Idghaam Mithlayn, Idghaam Mutaqaaribayn, Raa Tafkheem/Tarqeeq, Sun & Moon letters.
-- [x] **5-Stage Processing Pipeline** ([tajweed.py](file:///c:/Users/manaa/Documents/appagent/Itq%C4%81n/itqan-phase1/backend/app/tajweed.py)):
+- [x] **5-Stage Processing Pipeline** ([tajweed.py](file:///c:/Users/manaa/Documents/appagent/Itq%C4%81n/itqan-web/backend/app/tajweed.py)):
   1. **Stage 0 (Audio Quality & VAD Gate)**: `check_audio_quality` checks RMS energy, peak amplitude, and speech frame ratios (20ms frames) to filter out silence/noise.
   2. **Stage 1 (Acoustic ASR Recognition)**: Transcribes audio using Wav2Vec2 Arabic CTC model (`tarteel-ai/rijaal-asr-wav2vec2-large-arabic`).
   3. **Stage 2 (Text Normalization & Verification)**: `normalize_arabic_text` (removes Harakat, Tatweel, Quranic Waqf symbols; maps Alifs/Yaa/Teh Marbuta) and calculates Levenshtein accuracy.
@@ -140,9 +140,12 @@ Implemented in `itqan-web/` (see §1.7). Remaining items below are all gated on 
 
 ---
 
-### 2.3 Advanced Acoustic & Forced Alignment Engine Upgrades
-- [ ] **Frame-Accurate Forced Alignment**: Upgrade Wav2Vec2 CTC alignment from character-level estimation to frame-level forced alignment (using `torchaudio` Forced Alignment or Wav2Vec2 Alignment models) for millisecond-precise timing of Madd (2/4/5/6 Harakaat) and Ghunnah.
-- [ ] **Formant & Spectral Centroid Classification**: Implement acoustic formant ratio analysis (F1/F2/F3 frequencies) to evaluate tongue elevation for Velar letters (**ق, ك**), Heavy letters (**ص, ض, ط, ظ**), and Throat letters (**ع, ح, غ, خ**).
+### 2.3 Advanced Acoustic & Forced Alignment Engine Upgrades (COMPLETED)
+- [x] **Frame-Accurate CTC Trellis Forced Alignment** ([tajweed.py](file:///c:/Users/manaa/Documents/appagent/Itq%C4%81n/itqan-web/backend/app/tajweed.py)): Implemented Viterbi Trellis dynamic programming alignment directly on Wav2Vec2 emission probabilities for millisecond-accurate character/token boundary tracking down to ~20ms frame resolution.
+- [x] **Rule-Specific Span Localization** ([tajweed.py](file:///c:/Users/manaa/Documents/appagent/Itq%C4%81n/itqan-web/backend/app/tajweed.py)): All detected Tajweed rules now extract exact character spans (`char_span: (start, end)`), mapping directly to their corresponding audio time slices.
+- [x] **LPC Formant & Spectral Tracking** ([tajweed.py](file:///c:/Users/manaa/Documents/appagent/Itq%C4%81n/itqan-web/backend/app/tajweed.py)): Implemented Linear Predictive Coding (LPC) root-finding to extract $F_1, F_2, F_3$ formant frequencies for verifying Heavy letters / *Tafkheem* ($F_2 < 1500\text{ Hz}$) vs Light letters / *Tarqeeq* ($F_2 > 1650\text{ Hz}$).
+- [x] **Ghunnah Nasal Energy Ratio** ([tajweed.py](file:///c:/Users/manaa/Documents/appagent/Itq%C4%81n/itqan-web/backend/app/tajweed.py)): Spectral energy ratio calculation between nasal murmur resonance ($200\text{--}450\text{ Hz}$) and oral bands ($600\text{--}2500\text{ Hz}$) for *Noon/Meem Mushaddadah*, *Ikhfa*, and *Idghaam*.
+- [x] **Qalqala Plosive Burst Energy** ([tajweed.py](file:///c:/Users/manaa/Documents/appagent/Itq%C4%81n/itqan-web/backend/app/tajweed.py)): Plosive release burst energy ratio measurement for Saakin stops (*ق ط ب ج د*).
 
 ---
 
@@ -180,8 +183,8 @@ Implemented in `itqan-web/` (see §1.7). Remaining items below are all gated on 
 | Domain | Completed Artifact | Remaining Goal |
 |---|---|---|
 | **Reference Standard** | [INFO.md](file:///c:/Users/manaa/Documents/appagent/Itq%C4%81n/docs/INFO.md) | Expand to complete verse-by-verse benchmark catalog |
-| **Qari Database** | 242 Qari Vectors in [vector_db.json](file:///c:/Users/manaa/Documents/appagent/Itq%C4%81n/itqan-phase1/backend/data/vector_db.json) | Add sub-style embeddings (Tarteel vs Mujawwad) |
-| **Backend Engine** | [main.py](file:///c:/Users/manaa/Documents/appagent/Itq%C4%81n/itqan-phase1/backend/app/main.py), [matcher.py](file:///c:/Users/manaa/Documents/appagent/Itq%C4%81n/itqan-phase1/backend/app/matcher.py), [tajweed.py](file:///c:/Users/manaa/Documents/appagent/Itq%C4%81n/itqan-phase1/backend/app/tajweed.py) | User management, progress tracking & course API |
+| **Qari Database** | 242 Qari Vectors in [vector_db.json](file:///c:/Users/manaa/Documents/appagent/Itq%C4%81n/itqan-web/backend/data/vector_db.json) | Add sub-style embeddings (Tarteel vs Mujawwad) |
+| **Backend Engine** | [main.py](file:///c:/Users/manaa/Documents/appagent/Itq%C4%81n/itqan-web/backend/app/main.py), [matcher.py](file:///c:/Users/manaa/Documents/appagent/Itq%C4%81n/itqan-web/backend/app/matcher.py), [tajweed.py](file:///c:/Users/manaa/Documents/appagent/Itq%C4%81n/itqan-web/backend/app/tajweed.py) | User management, progress tracking & course API |
 | **Tajweed Rules** | 5-stage pipeline covering Qalqala, Ghunnah, Laam, Meem, Noon, Madd | Frame-level CTC forced alignment |
 | **Qaida Module** | Specification in [vision.md](file:///c:/Users/manaa/Documents/appagent/Itq%C4%81n/docs/vision.md) | Complete lesson content & Makhaarij evaluation |
 | **Frontend UI/UX** | *None (Prototype discarded)* | Full production Web/Mobile App UI & Design System |

@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 source_path = Path("master_vector_matrix.json")
-target_dir = Path("itqan-phase1/backend/data")
+target_dir = Path("itqan-web/backend/data")
 target_dir.mkdir(parents=True, exist_ok=True)
 target_path = target_dir / "vector_db.json"
 

@@ -1,50 +1,93 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PageHeader } from '@/components/PageHeader';
 import { Badge, Card, SectionHeader } from '@/components/ui';
 import { Icon, type IconName } from '@/components/Icon';
 import { cn } from '@/lib/cn';
 import { VERSES } from '@/lib/verses';
+import { loadCourseProgress, type CourseProgressState } from '@/lib/courseState';
+import { TAJWEED_INFO_CHAPTERS } from '@/lib/infoData';
 
 /**
  * LRN-001 Learning Hub.
- * Deliver structured content: Qaida (placeholder) + Tajweed.
+ * Deliver structured content: Qaida (placeholder) + Tajweed Course.
  */
 export default function LearnPage() {
+  const [progress] = useState<CourseProgressState>(() => loadCourseProgress());
+
+  const total = TAJWEED_INFO_CHAPTERS.length;
+  const completed = progress.completedChapterIds.length;
+  const pct = Math.round((completed / total) * 100);
+
+  const activeChap =
+    TAJWEED_INFO_CHAPTERS.find((c) => c.id === progress.activeChapterId) ||
+    TAJWEED_INFO_CHAPTERS[0];
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 anim-fade-up">
       <PageHeader
         title="Learn"
-        subtitle="Structured paths: read Arabic from scratch with Qaida, then perfect it with Tajweed."
+        subtitle="Structured learning paths: read Arabic with Qaida, then master Quranic recitation with the Tajweed Masterclass."
       />
 
       <div className="grid gap-5 md:grid-cols-2">
-        {/* Qarda course card (empty / coming soon by request) */}
+        {/* Qaida course card */}
         <CourseCard
-          to="/learn/qaida"
-          badge="Pillar 2 · Coming soon"
-          badgeTone="sand"
-          icon="book"
-          title="Qaida — Learn Arabic Reading"
-          arabic="القاعدة النورانية"
-          body="Master letters, vowels, and the places of articulation (Makhaarij) from zero. This course opens in a future update."
+          to="/qaida"
+          badge="Pillar 2 · 22 Lessons Live"
+          badgeTone="brand"
+          icon="sparkle"
+          title="Madani Qa'idah — Arabic Literacy"
+          arabic="الْقَاعِدَةُ الْمَدَنِيَّة"
+          body="Master letters, vowels, articulation points (Makhaarij), and Quranic fluency across 22 interactive lessons with audio spelling breakdown."
           progress={0}
-          locked
         />
 
-        {/* Tajweed course card */}
+        {/* Tajweed masterclass course card */}
         <CourseCard
-          to="/practice/tajweed"
-          badge="Pillar 3 · Live"
+          to="/learn/tajweed"
+          badge="Pillar 3 · 19 Chapters Live"
           badgeTone="brand"
-          icon="practice"
-          title="Tajweed — Recite Correctly"
-          arabic="التجويد"
-          body={`Practice ${VERSES.length} curated verses with rule-by-rule AI feedback: Qalqala, Ghunnah, Madd, Noon Saakin & more.`}
-          progress={18}
+          icon="book"
+          title="Tajweed Masterclass — Recite Correctly"
+          arabic="دورة إتقان التجويد"
+          body={`Step-by-step 19-chapter curriculum with Theory, Practice Verses, and AI Recitation Testing. Currently on Chapter ${activeChap.chapterNumber}: ${activeChap.title}.`}
+          progress={pct}
         />
       </div>
 
-      {/* Tajweed module preview (TAJ-002) */}
+      {/* Tajweed course CTA banner */}
+      <Card className="bg-gradient-to-r from-brand-900 via-brand-800 to-brand-700 p-6 text-white sm:p-8">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="space-y-1 max-w-xl">
+            <span className="text-xs font-bold uppercase tracking-wider text-gold-300">
+              Interactive 3-Step Course
+            </span>
+            <h3 className="text-xl font-extrabold text-white">
+              {completed > 0 ? `Resume Chapter ${activeChap.chapterNumber}: ${activeChap.title}` : 'Begin Chapter 1: The Aadaab of Reciting the Holy Qur’an'}
+            </h3>
+            <p className="text-sm text-brand-100/90 leading-relaxed">
+              Every chapter features Theory ➔ Practice Verses ➔ AI Recitation Test with instant Tajweed score rings.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2.5">
+            <Link
+              to={`/learn/tajweed/lesson/${activeChap.id}`}
+              className="inline-flex items-center gap-2 rounded-xl bg-gold-500 px-5 py-3 text-xs font-extrabold text-white shadow-lg transition-transform hover:scale-105"
+            >
+              <Icon name="play" size={16} /> Continue Course ➔
+            </Link>
+            <Link
+              to="/learn/tajweed"
+              className="inline-flex items-center gap-2 rounded-xl bg-white/15 border border-white/20 px-4 py-3 text-xs font-bold text-white backdrop-blur hover:bg-white/25"
+            >
+              <Icon name="book" size={16} /> Course Syllabus
+            </Link>
+          </div>
+        </div>
+      </Card>
+
+      {/* Tajweed practice verses preview */}
       <Card>
         <SectionHeader
           title="Practice verses"
@@ -54,7 +97,7 @@ export default function LearnPage() {
           {VERSES.map((v) => (
             <Link
               key={v.id}
-              to="/practice/tajweed"
+              to={`/practice/tajweed?verse=${v.id}`}
               className="group flex items-center gap-4 rounded-xl border border-border bg-surface p-4 transition-all hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-[var(--shadow-lift)]"
             >
               <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-700">
