@@ -4,7 +4,7 @@
 
 ---
 
-## 🌟 Key Features
+## Key Features
 
 1. **Voice Qari Matcher**:
    - Uses Microsoft's `wavlm-base-plus-sv` audio x-vector embeddings.
@@ -29,7 +29,7 @@
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 Itqān/
@@ -60,7 +60,7 @@ Itqān/
 
 ---
 
-## 🚀 Server Running Instructions
+## Server Running Instructions
 
 ### 1. Prerequisites
 - **Python 3.10+** (with `pip`)
@@ -183,7 +183,7 @@ Open a **new terminal** window for the frontend client:
 
 ---
 
-## 🧪 Testing & Verification Scripts
+## Testing & Verification Scripts
 
 The repository includes automated verification scripts to test individual modules and end-to-end API communication:
 
