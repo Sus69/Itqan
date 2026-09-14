@@ -16,6 +16,23 @@ export function confidencePct(confidence: number): number {
   return Math.round(confidence * 1000) / 10;
 }
 
+/**
+ * "3 minutes ago" / "yesterday". Used wherever an attempt timestamp is shown, so
+ * recency reads the same in the Mistake Bank and in Insights.
+ */
+export function relativeTime(timestamp: number, now = Date.now()): string {
+  const seconds = Math.round((now - timestamp) / 1000);
+  if (seconds < 45) return 'just now';
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+  const days = Math.round(hours / 24);
+  if (days === 1) return 'yesterday';
+  if (days < 30) return `${days} days ago`;
+  return new Date(timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
 /** Status metadata shared by Tajweed evaluation cards. */
 export type EvalStatus =
   | 'passed'

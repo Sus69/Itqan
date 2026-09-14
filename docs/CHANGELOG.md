@@ -445,6 +445,34 @@ Itqān/
 ### 10. Removal of Character-Level Forced Alignment Card
 - Removed the Character-Level Forced Alignment card from `TajweedStudioPage.tsx` to streamline the studio view directly into overall recitation analytics and authentic rule evaluations.
 
+---
+
+## 📅 Session Log: 2026-09-14 (UI/UX Design Overhaul, Component Decoupling & Accessibility)
+
+### 1. Typography & Aesthetic Modernization
+- **Plus Jakarta Sans**: Replaced the previous English UI typeface with **Plus Jakarta Sans** for crisp, modern sans-serif legibility across all body copy, navigation, buttons, and metrics.
+- **Editorial Serif Headings (Lora)**: Added Google Font **Lora** as the primary heading typeface (`--font-heading`, `--font-serif`), styled with regular/unbolded weight (`font-weight: 400 !important;`) across all heading levels (`h1` through `h6`) for a serene, contemplative editorial appearance.
+- **Flat Elevation & Global Shadow Elimination**: Completely stripped drop shadows and box shadows across the application (`*, *::before, *::after { box-shadow: none !important; }`) and set `--shadow-soft`, `--shadow-lift`, and `--shadow-ring` tokens to `none`.
+
+### 2. Component Decoupling & Unified Badge Architecture
+- **Eliminated Component Style Collisions**: Created dedicated scoped classes (`.itq-hero-banner`, `.itq-progress-card`, `.itq-practice-card`, `.itq-quicklink`, `.itq-sidebar-auth`, `.itq-nav-active`, `.itq-logo-badge`) so individual component changes never leak across pages or banners.
+- **Unified Badge System (`.itq-badge`)**:
+  - Replaced ad-hoc 15-class Tailwind utility strings with a unified `.itq-badge` design system in `src/index.css`.
+  - Added dedicated tone variants: `.itq-badge-brand`, `.itq-badge-hero`, `.itq-badge-glass`, `.itq-badge-gold`, `.itq-badge-neutral`, `.itq-badge-success`, `.itq-badge-warning`, `.itq-badge-error`, `.itq-badge-info`.
+  - Refactored the `<Badge>` UI component to map cleanly to `.itq-badge` and its variants with zero class collisions.
+  - Implemented translucent accent green hero banner badge with subtle border, backdrop blur, and mint text.
+
+### 3. Dark Mode Contrast & Readability Enhancements
+- **High-Contrast Typography Tokens**: Upgraded dark theme tokens (`--color-ink: #f0fdf4`, `--color-ink-soft: #c8d8cf`, `--color-ink-faint: #9cb1a6`) to meet WCAG AA/AAA contrast ratios.
+- **Brand Text Dark Adaptation**: Added automatic dark mode adaptation for brand green text (`.dark .text-brand-800 -> #a7f3d0`, `.dark .text-brand-700 -> #6ee7b7`, `.dark .text-brand-600 -> #52b788`), preventing Arabic titles and accents from turning into dark, invisible blobs on dark surfaces.
+- **Course & Lesson Cards**: Upgraded chapter cards on `TajweedCourseHubPage` and lesson cards on `QaidaPage` with high-contrast Arabic headers, legible description copy, and clean emerald glass active states.
+- **Sidebar Active Nav Icon**: Ensured active collapsed sidebar navigation icons render in pure white (`#ffffff`).
+
+### 4. Dev Server Concurrency & Backend Liveness
+- **Unified Dev Script**: Configured `concurrently` in `package.json` to start both Vite frontend and FastAPI backend (`uvicorn`) synchronously with a single `npm run dev` command.
+- **Health & Warmup Retries**: Configured reverse proxy in `vite.config.ts` for `/api` and `/health` and added rapid 3-second warmup polling in `useServiceHealth`.
+
+
 
 
 

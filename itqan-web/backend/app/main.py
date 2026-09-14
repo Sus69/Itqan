@@ -75,7 +75,7 @@ app.include_router(tajweed_router, prefix="/api/v1")
 app.include_router(audio_router, prefix="/api/v1")
 
 
-@app.get("/health", tags=["System Health"])
+@app.api_route("/health", methods=["GET", "HEAD"], tags=["System Health"])
 def health_check():
     matcher = engines.get("matcher")
     tajweed_evaluator = engines.get("tajweed")

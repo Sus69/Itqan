@@ -39,10 +39,10 @@ export default function TajweedCourseHubPage() {
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-3 max-w-2xl">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge className="bg-white/15 text-white backdrop-blur">
+              <Badge tone="glass">
                 <Icon name="book" size={13} strokeWidth={2.5} /> 19 Chapters · 6 Tiers
               </Badge>
-              <Badge className="bg-gold-500/20 text-gold-200 border border-gold-400/30 backdrop-blur">
+              <Badge tone="gold">
                 <Icon name="sparkle" size={13} /> INFO.md Standard
               </Badge>
             </div>
@@ -186,28 +186,28 @@ export default function TajweedCourseHubPage() {
                     key={chap.id}
                     to={`/learn/tajweed/lesson/${chap.id}`}
                     className={cn(
-                      'group relative flex flex-col justify-between rounded-2xl border p-5 transition-all hover:-translate-y-1 hover:shadow-[var(--shadow-lift)]',
+                      'group relative flex flex-col justify-between rounded-2xl border p-5 transition-all hover:-translate-y-1',
                       !isUnlocked
-                        ? 'border-border/60 bg-surface/50 opacity-60'
+                        ? 'border-border/70 bg-surface/40 opacity-75'
                         : isCompleted
                           ? 'border-emerald-300/80 bg-emerald-50/20 hover:border-emerald-500'
                           : isActive
-                            ? 'border-brand-500 bg-brand-50/40 ring-2 ring-brand-500/20'
+                            ? 'border-brand-500 bg-brand-50/70 dark:bg-emerald-950/40 dark:border-emerald-500/50 ring-1 ring-brand-500/30'
                             : 'border-border bg-surface hover:border-brand-300',
                     )}
                   >
                     <div>
                       {/* Top Header Row */}
                       <div className="flex items-center justify-between gap-2 mb-3">
-                        <span className="text-[11px] font-extrabold uppercase tracking-wider text-ink-faint">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-ink-soft">
                           Chapter {chap.chapterNumber}
                         </span>
                         {!isUnlocked ? (
-                          <Badge tone="neutral" className="bg-sand-100 text-sand-700">
+                          <Badge tone="neutral">
                             <Icon name="lock" size={11} /> Locked
                           </Badge>
                         ) : isCompleted ? (
-                          <Badge tone="neutral" className="bg-emerald-100 text-emerald-800 border-emerald-300 font-bold">
+                          <Badge tone="success">
                             <Icon name="check" size={12} /> Completed
                           </Badge>
                         ) : isActive ? (
@@ -217,31 +217,31 @@ export default function TajweedCourseHubPage() {
                         )}
                       </div>
 
-                      <h3 className="text-base font-bold text-ink group-hover:text-brand-700 transition-colors">
+                      <h3 className="text-base font-semibold text-ink group-hover:text-brand-700 transition-colors">
                         {chap.title}
                       </h3>
-                      <p className="arabic-text mt-1 text-sm font-semibold text-brand-800" dir="rtl">
+                      <p className="arabic-text mt-1 text-sm font-semibold text-brand-700 dark:text-emerald-300" dir="rtl">
                         {chap.arabicTitle}
                       </p>
-                      <p className="mt-2.5 text-xs text-ink-faint line-clamp-2 leading-relaxed">
+                      <p className="mt-2.5 text-xs text-ink-soft line-clamp-2 leading-relaxed">
                         {chap.summary}
                       </p>
                     </div>
 
                     {/* Footer Row */}
-                    <div className="mt-4 border-t border-border/50 pt-3 flex items-center justify-between text-xs">
+                    <div className="mt-4 border-t border-border/60 pt-3 flex items-center justify-between text-xs">
                       <span className="font-semibold text-ink-soft flex items-center gap-1">
-                        <Icon name="note" size={13} className="text-brand-600" />
+                        <Icon name="note" size={13} className="text-brand-600 dark:text-emerald-400" />
                         {drillCount > 0 ? `${drillCount} Practice Drills` : 'Concept Reading'}
                       </span>
                       {!isUnlocked ? (
-                        <span className="text-ink-faint font-medium">Locked 🔒</span>
+                        <span className="text-ink-soft font-medium">Locked 🔒</span>
                       ) : score !== undefined ? (
-                        <span className={cn('font-extrabold', score >= 80 ? 'text-emerald-700' : 'text-brand-700')}>
+                        <span className={cn('font-extrabold', score >= 80 ? 'text-emerald-600 dark:text-emerald-400' : 'text-brand-600 dark:text-emerald-400')}>
                           Score: {score}%
                         </span>
                       ) : (
-                        <span className="text-brand-700 font-bold">Start ➔</span>
+                        <span className="text-brand-700 dark:text-emerald-400 font-bold">Start ➔</span>
                       )}
                     </div>
                   </Link>

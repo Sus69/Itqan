@@ -1,7 +1,7 @@
 # Itqān (إتقان) — Comprehensive Project Status Report
 
-> **Generated Date:** August 10, 2026  
-> **Status:** Phase 1 Backend Core + Production Web UI (Light Mode) Completed  
+> **Generated Date:** September 14, 2026  
+> **Status:** Production Web UI Overhaul (Dark Mode, Plus Jakarta Sans, Lora Serif Headings, High-Contrast Accessibility, Concurrency) Completed  
 > **Primary Reference Standard:** [INFO.md](file:///c:/Users/manaa/Documents/appagent/Itq%C4%81n/docs/INFO.md)  
 
 ---
@@ -85,7 +85,7 @@ This document details all **completed work** and outlines what **remains to be b
 
 ### 1.7 Production Web Frontend (`itqan-web/` — NEW)
 Built from scratch with **Vite + React 19 + TypeScript + Tailwind 4**, **light-mode only** (dark mode intentionally omitted per directive). Follows [design-language.md](file:///c:/Users/manaa/Documents/appagent/Itq%C4%81n/docs/design/design-language.md) (semantic roles, progressive disclosure, RTL/Arabic-first) and [navigation.md](file:///c:/Users/manaa/Documents/appagent/Itq%C4%81n/docs/architeture/navigation.md) (5 primary destinations).
-- [x] **Light Design System** (`src/index.css`): Semantic color roles (brand emerald, gold accent, warm sand surfaces), typography roles (Outfit sans / Noto Naskh Arabic / Amiri Quran), soft shadows, light glass (`backdrop-blur` on white), RTL/Quran text utilities, reduced-motion support.
+- [x] **Light Design System** (`src/index.css`): Semantic color roles (brand emerald, gold accent, warm sand surfaces), typography roles (Plus Jakarta Sans / Noto Naskh Arabic / Amiri Quran), soft shadows, light glass (`backdrop-blur` on white), RTL/Quran text utilities, reduced-motion support.
 - [x] **App Shell** (`src/components/AppShell.tsx`): Desktop sidebar + topbar + mobile bottom nav covering Home, Learn, Practice, Progress, Profile. Live **BackendStatus** pill (polls `GET /health`, shows Qari count).
 - [x] **Recording Engine** (`src/hooks/useRecorder.ts` + `src/components/RecorderPanel.tsx`): MediaRecorder capture, live waveform bars + mic-level meter, elapsed timer, playback, retry. Outputs a Blob to the API.
 - [x] **Tajweed Studio** (`src/pages/TajweedStudioPage.tsx`): Verse picker (real text sent to `POST /api/v1/tajweed/analyze`), recorder, **ColorCodedVerse** (char-level alignment colors), overall ScoreRing, and **RuleEvaluationCard** list (expandable rule-by-rule feedback with INFO.md rule names, detected vs expected Harakaat, suggestions). Handles `insufficient_speech` VAD rejections gracefully.
@@ -123,7 +123,7 @@ Built from scratch with **Vite + React 19 + TypeScript + Tailwind 4**, **light-m
 
 ### 2.1 Frontend & UI/UX Application (Core Web App — COMPLETE; DB-coupled features remain)
 Implemented in `itqan-web/` (see §1.7). Remaining items below are all gated on future backend systems.
-- [x] **Design system** (light-mode only), glassmorphism on light surfaces, Outfit/Naskh/Amiri typography, semantic roles.
+- [x] **Design system** (light-mode only), glassmorphism on light surfaces, Plus Jakarta Sans/Naskh/Amiri typography, semantic roles.
 - [x] **Interactive Tajweed Recitation Studio** (live waveform + mic meter, color-coded verse renderer, rule-by-rule AI feedback, retry).
 - [x] **Qari Voice Matcher screen** (record/upload, analyzing state, top-3 confidence cards).
 - [x] **App shell navigation + Home dashboard**.

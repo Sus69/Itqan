@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ============================================================
    Itqān Design System — Light Theme Only
    Semantic styling per docs/design/design-language.md §18.
@@ -17,6 +19,7 @@
   --color-brand-600: #266d4d;
   --color-brand-700: #1f583f;
   --color-brand-800: #1b4634;
+  --color-brand-850: #17402f;
   --color-brand-900: #143327;
   --color-brand-950: #0b1f16;
 
@@ -45,8 +48,9 @@
 
   /* Semantic roles */
   --color-background: #f4f6f4;         /* app canvas */
-  --color-surface: #ffffff;            /* primary surface */
-  --color-surface-2: #f1f5f1;          /* secondary surface */
+  --color-surface: #ffffff;            /* primary surface (elevation 0) */
+  --color-surface-1: #f8faf8;          /* raised surface (elevation 1) */
+  --color-surface-2: #f1f5f1;          /* recessed surface (elevation 2) */
   --color-floating: #ffffff;           /* popovers/cards */
   --color-ink: #16211b;                /* primary text */
   --color-ink-soft: #45544b;           /* secondary text */
@@ -62,18 +66,34 @@
   --color-info: #2667c9;
   --color-info-soft: #e6eefb;
 
-  /* Typography roles */
-  --font-sans: "Outfit", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* Typography roles.
+     Quranic text prefers an Uthmani face when the reader has one installed,
+     then falls back to the webfonts loaded in index.html. */
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-serif: "Lora", Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-heading: "Lora", Georgia, Cambria, "Times New Roman", Times, serif;
   --font-arabic: "Noto Naskh Arabic", "Amiri Quran", serif;
-  --font-quran: "Amiri Quran", "Noto Naskh Arabic", serif;
+  --font-quran:
+    "KFGQPC Uthman Taha Naskh", "KFGQPC HAFS Uthmanic Script", "Al Qalam Quran Majeed",
+    "Amiri Quran", "Noto Naskh Arabic", serif;
 
   /* Radii */
   --radius-xl2: 1.25rem;
 
-  /* Shadows (soft, low-contrast for calm light UI) */
-  --shadow-soft: 0 1px 2px rgb(20 51 39 / 0.05), 0 8px 24px -12px rgb(20 51 39 / 0.18);
-  --shadow-lift: 0 2px 4px rgb(20 51 39 / 0.06), 0 20px 40px -16px rgb(20 51 39 / 0.28);
-  --shadow-ring: 0 0 0 1px rgb(38 109 77 / 0.12);
+  /* Container widths — one ladder, used by every shell and session surface.
+     These generate max-w-shell / max-w-focus / max-w-reading. */
+  --container-shell: 72rem;    /* app chrome + hub pages */
+  --container-focus: 56rem;    /* single-task session surfaces */
+  --container-reading: 42rem;  /* theory and long-form copy */
+
+  /* Motion tokens */
+  --animate-fade-in: itq-fade-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-soft-pulse: itq-soft-pulse 2s ease-in-out infinite;
+
+  /* Shadows — removed globally */
+  --shadow-soft: none;
+  --shadow-lift: none;
+  --shadow-ring: none;
 }
 
 /* ---------- Base ---------- */
@@ -89,7 +109,63 @@
       radial-gradient(at 100% 0%, rgba(193 147 52 / 0.08), transparent 40%);
     background-attachment: fixed;
     min-height: 100vh;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
+
+  /* Editorial Serif Headings (Unbolded) */
+  h1, h2, h3, h4, h5, h6, .font-heading, .font-serif {
+    font-family: var(--font-heading);
+    font-weight: 400 !important;
+    letter-spacing: -0.01em;
+  }
+  h1:lang(ar), h2:lang(ar), h3:lang(ar), h4:lang(ar) {
+    font-family: var(--font-arabic);
+  }
+
+  /* Dark Theme Overrides — Deep obsidian & emerald palette */
+  html.dark {
+    --color-background: #0a0f0d;
+    --color-surface: #111815;
+    --color-surface-1: #16201b;
+    --color-surface-2: #1b2822;
+    --color-floating: #18241f;
+    --color-ink: #f0fdf4;                /* crisp, bright primary text */
+    --color-ink-soft: #c8d8cf;           /* clear, readable secondary text */
+    --color-ink-faint: #9cb1a6;          /* legible captions and labels */
+    --color-border: #1e2e26;
+
+    --color-sand-50: #141e19;
+    --color-sand-100: #1a2721;
+    --color-sand-200: #22332b;
+    --color-sand-300: #2d4239;
+
+    --color-success: #34d399;
+    --color-success-soft: #0d281e;
+    --color-warning: #fbbf24;
+    --color-warning-soft: #2e2009;
+    --color-error: #f87171;
+    --color-error-soft: #331414;
+    --color-info: #60a5fa;
+    --color-info-soft: #0f233a;
+
+    --shadow-soft: none;
+    --shadow-lift: none;
+  }
+
+  html.dark body {
+    background-image:
+      radial-gradient(at 12% -10%, rgba(66 157 114 / 0.12), transparent 45%),
+      radial-gradient(at 100% 0%, rgba(193 147 52 / 0.05), transparent 40%);
+  }
+
+  /* Font Scale Adjustments */
+  html[data-quran-scale="large"] .quran-text {
+    font-size: 115% !important;
+  }
+  html[data-quran-scale="xlarge"] .quran-text {
+    font-size: 130% !important;
+  }
+
   ::selection {
     background: var(--color-brand-200);
     color: var(--color-brand-900);
@@ -98,6 +174,16 @@
     outline: 2px solid var(--color-brand-500);
     outline-offset: 2px;
     border-radius: 6px;
+  }
+  /* Ensure high-contrast readability for brand text in dark mode */
+  .dark .text-brand-800 {
+    color: #a7f3d0;
+  }
+  .dark .text-brand-700 {
+    color: #6ee7b7;
+  }
+  .dark .text-brand-600 {
+    color: #52b788;
   }
   /* Calm, thin scrollbars */
   * {
@@ -113,23 +199,52 @@
   /* Light glass surface (backdrop blur on WHITE, not dark) */
   .glass {
     @apply rounded-2xl border border-white/60 bg-white/70 backdrop-blur-xl;
-    box-shadow: var(--shadow-soft);
   }
   .glass-soft {
     @apply rounded-2xl border border-border bg-surface/80 backdrop-blur-md;
   }
   .card {
     @apply rounded-2xl border border-border bg-surface;
-    box-shadow: var(--shadow-soft);
   }
   .quran-text {
     font-family: var(--font-quran);
     font-feature-settings: "liga";
     direction: rtl;
+    unicode-bidi: isolate;
   }
   .arabic-text {
     font-family: var(--font-arabic);
     direction: rtl;
+    unicode-bidi: isolate;
+  }
+
+  /* Quranic type scale.
+     Leading is generous on purpose: Tashkeel and Uthmani marks sit well above
+     and below the baseline, so anything under ~2.1 clips them. `quran-sm` is
+     the smallest size Quranic text may ever be rendered at. */
+  .quran-sm { font-size: 1.125rem; line-height: 2.1; }
+  .quran-md { font-size: clamp(1.25rem, 1.4vw + 0.5rem, 1.6rem); line-height: 2.2; }
+  .quran-lg { font-size: clamp(1.5rem, 2.2vw + 0.5rem, 2.25rem); line-height: 2.3; }
+  .quran-xl { font-size: clamp(1.75rem, 3vw + 0.5rem, 2.75rem); line-height: 2.35; }
+
+  /* Isolates an Arabic fragment inside a Latin sentence so neither side
+     reorders the other. Use on every interpolated Arabic string. */
+  .bidi-isolate {
+    unicode-bidi: isolate;
+  }
+
+  /* Async placeholder. Pair with an aria-busy region and a visually hidden
+     status message — never rely on the shimmer alone to say "loading". */
+  .skeleton {
+    @apply rounded-lg bg-sand-200/70;
+    background-image: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgb(255 255 255 / 0.65) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: itq-shimmer 1.4s ease-in-out infinite;
   }
 }
 
@@ -153,13 +268,339 @@
   0%, 100% { transform: scaleY(0.35); }
   50% { transform: scaleY(1); }
 }
+@keyframes itq-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes itq-soft-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+@keyframes itq-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
 
 .anim-fade-up { animation: itq-fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
 .anim-pop { animation: itq-pop 0.35s cubic-bezier(0.22, 1, 0.36, 1) both; }
 .anim-rec { animation: itq-pulse-rec 1.6s ease-out infinite; }
 .anim-spin { animation: itq-spin 0.9s linear infinite; }
+.anim-pulse { animation: itq-soft-pulse 2s ease-in-out infinite; }
 
 @media (prefers-reduced-motion: reduce) {
-  .anim-fade-up, .anim-pop, .anim-rec { animation: none; }
+  .anim-fade-up, .anim-pop, .anim-rec, .anim-pulse, .skeleton { animation: none; }
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+/* ============================================================
+   Decoupled Component Layer
+   Each component is strictly scoped so changes never leak across components.
+   ============================================================ */
+@layer components {
+  /* 1. Hero Recommendation Banner */
+  .itq-hero-banner {
+    background: linear-gradient(135deg, #143327 0%, #1b4634 50%, #1f583f 100%);
+    border: 1px solid rgba(82, 183, 136, 0.2);
+    color: #ffffff;
+  }
+  .dark .itq-hero-banner {
+    background: linear-gradient(135deg, #0b1f17 0%, #112d21 50%, #173d2d 100%);
+    border: 1px solid rgba(82, 183, 136, 0.25);
+    color: #f0fdf4;
+  }
+  /* ============================================================
+     Unified Badge & Tag Component System (.itq-badge)
+     ============================================================ */
+  .itq-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    border-radius: 9999px;
+    padding: 0.25rem 0.625rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  }
+
+  /* Neutral Tone */
+  .itq-badge-neutral {
+    border: 1px solid var(--color-border);
+    background-color: var(--color-surface-1);
+    color: var(--color-ink-soft);
+  }
+
+  /* Brand / Accent Green Tone */
+  .itq-badge-brand {
+    border: 1px solid var(--color-brand-200);
+    background-color: var(--color-brand-50);
+    color: var(--color-brand-800);
+  }
+  .dark .itq-badge-brand {
+    border: 1px solid rgba(82, 183, 136, 0.3);
+    background-color: rgba(54, 136, 98, 0.15);
+    color: #86c1a1;
+  }
+
+  /* Hero Banner Translucent Green Badge */
+  .itq-badge-hero,
+  .itq-hero-badge {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.375rem !important;
+    border-radius: 9999px !important;
+    padding: 0.25rem 0.625rem !important;
+    font-size: 0.75rem !important;
+    line-height: 1rem !important;
+    font-weight: 600 !important;
+    white-space: nowrap !important;
+    background-color: rgba(52, 211, 153, 0.18) !important;
+    border: 1px solid rgba(110, 231, 183, 0.35) !important;
+    color: #a7f3d0 !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+  }
+  .itq-badge-hero svg,
+  .itq-hero-badge svg,
+  .itq-badge-hero .lucide,
+  .itq-hero-badge .lucide {
+    color: #a7f3d0 !important;
+    stroke: #a7f3d0 !important;
+    display: inline-block !important;
+    flex-shrink: 0 !important;
+  }
+  .itq-badge-hero:hover,
+  .itq-hero-badge:hover {
+    background-color: rgba(52, 211, 153, 0.28) !important;
+    border-color: rgba(110, 231, 183, 0.50) !important;
+  }
+  .dark .itq-badge-hero,
+  .dark .itq-hero-badge {
+    background-color: rgba(52, 211, 153, 0.18) !important;
+    border: 1px solid rgba(110, 231, 183, 0.35) !important;
+    color: #a7f3d0 !important;
+  }
+  .dark .itq-badge-hero:hover,
+  .dark .itq-hero-badge:hover {
+    background-color: rgba(52, 211, 153, 0.28) !important;
+    border-color: rgba(110, 231, 183, 0.50) !important;
+  }
+
+  /* Glass / Translucent White on Banners */
+  .itq-badge-glass {
+    background-color: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  /* Gold Tone */
+  .itq-badge-gold {
+    border: 1px solid var(--color-gold-200);
+    background-color: var(--color-gold-50);
+    color: var(--color-gold-800);
+  }
+  .dark .itq-badge-gold {
+    border: 1px solid rgba(208, 168, 71, 0.3);
+    background-color: rgba(208, 168, 71, 0.15);
+    color: #ead7a3;
+  }
+
+  /* Success Tone */
+  .itq-badge-success {
+    border: 1px solid rgba(31, 138, 76, 0.25);
+    background-color: var(--color-success-soft);
+    color: var(--color-success);
+  }
+  .dark .itq-badge-success {
+    border: 1px solid rgba(52, 211, 153, 0.3);
+    background-color: rgba(52, 211, 153, 0.15);
+    color: #34d399;
+  }
+
+  /* Warning Tone */
+  .itq-badge-warning {
+    border: 1px solid rgba(192, 125, 18, 0.25);
+    background-color: var(--color-warning-soft);
+    color: var(--color-warning);
+  }
+  .dark .itq-badge-warning {
+    border: 1px solid rgba(251, 191, 36, 0.3);
+    background-color: rgba(251, 191, 36, 0.15);
+    color: #fbbf24;
+  }
+
+  /* Error Tone */
+  .itq-badge-error {
+    border: 1px solid rgba(194, 55, 47, 0.25);
+    background-color: var(--color-error-soft);
+    color: var(--color-error);
+  }
+  .dark .itq-badge-error {
+    border: 1px solid rgba(248, 113, 113, 0.3);
+    background-color: rgba(248, 113, 113, 0.15);
+    color: #f87171;
+  }
+
+  /* Info Tone */
+  .itq-badge-info {
+    border: 1px solid rgba(38, 103, 201, 0.25);
+    background-color: var(--color-info-soft);
+    color: var(--color-info);
+  }
+  .dark .itq-badge-info {
+    border: 1px solid rgba(96, 165, 250, 0.3);
+    background-color: rgba(96, 165, 250, 0.15);
+    color: #60a5fa;
+  }
+
+  /* 2. Today: Continue Learning Progress Rows */
+  .itq-progress-card {
+    border: 1px solid var(--color-border);
+    background-color: var(--color-surface-2);
+    transition: border-color 0.18s ease, background-color 0.18s ease;
+  }
+  .itq-progress-card:hover {
+    border-color: #86c1a1;
+    background-color: #f0f7f3;
+  }
+  .dark .itq-progress-card {
+    border-color: #1e2e26;
+    background-color: #141d18;
+  }
+  .dark .itq-progress-card:hover {
+    border-color: #266d4d;
+    background-color: #17231d;
+  }
+
+  .itq-progress-icon {
+    background-color: #d7ecdf;
+    color: #1f583f;
+    border: 1px solid transparent;
+  }
+  .dark .itq-progress-icon {
+    background-color: #15271e;
+    color: #6ee7b7;
+    border: 1px solid rgba(82, 183, 136, 0.25);
+  }
+
+  /* 3. Practice: Choose Another Practice Mode Cards */
+  .itq-practice-card {
+    border: 1px solid var(--color-border);
+    background-color: var(--color-surface);
+    transition: all 0.2s ease;
+  }
+  .itq-practice-card:hover {
+    border-color: #86c1a1;
+    transform: translateY(-2px);
+  }
+  .dark .itq-practice-card {
+    border-color: #1e2e26;
+    background-color: #131d18;
+  }
+  .dark .itq-practice-card:hover {
+    border-color: #266d4d;
+    background-color: #16221c;
+  }
+
+  .itq-practice-icon {
+    background-color: #eef7f1;
+    color: #1f583f;
+    border: 1px solid #d7ecdf;
+  }
+  .dark .itq-practice-icon {
+    background-color: #15271e;
+    color: #6ee7b7;
+    border: 1px solid rgba(82, 183, 136, 0.25);
+  }
+
+  .itq-practice-cta {
+    color: #1f583f;
+  }
+  .dark .itq-practice-cta {
+    color: #52b788;
+  }
+
+  /* 4. Quick Links */
+  .itq-quicklink {
+    transition: background-color 0.15s ease;
+  }
+  .itq-quicklink:hover {
+    background-color: var(--color-surface);
+  }
+  .dark .itq-quicklink:hover {
+    background-color: #18241e;
+  }
+
+  .itq-quicklink-icon {
+    background-color: var(--color-surface);
+    color: #1f583f;
+  }
+  .dark .itq-quicklink-icon {
+    background-color: #17241e;
+    color: #52b788;
+    border: 1px solid #1e2e26;
+  }
+
+  /* 5. Sidebar Sign-In / Demo Action */
+  .itq-sidebar-auth {
+    background-color: #eef7f1;
+    border: 1px solid #b3d9c3;
+    color: #1b4634;
+    transition: all 0.15s ease;
+  }
+  .itq-sidebar-auth:hover {
+    background-color: #d7ecdf;
+  }
+  .dark .itq-sidebar-auth {
+    background-color: #14281f;
+    border: 1px solid rgba(82, 183, 136, 0.35);
+    color: #8fd4b1;
+  }
+  .dark .itq-sidebar-auth:hover {
+    background-color: #1a3529;
+    border-color: rgba(82, 183, 136, 0.5);
+  }
+
+  /* 6. Sidebar Navigation Items */
+  .itq-nav-active {
+    background-color: #266d4d;
+    color: #ffffff !important;
+  }
+  .itq-nav-active svg,
+  .itq-nav-active .lucide {
+    color: #ffffff !important;
+    stroke: #ffffff !important;
+  }
+  .dark .itq-nav-active {
+    background-color: #1a3d2e;
+    color: #ffffff !important;
+    border: 1px solid rgba(82, 183, 136, 0.35);
+  }
+  .dark .itq-nav-active svg,
+  .dark .itq-nav-active .lucide {
+    color: #ffffff !important;
+    stroke: #ffffff !important;
+  }
+
+  /* 7. Sidebar Brand Logo Badge */
+  .itq-logo-badge {
+    background: linear-gradient(135deg, #1f583f, #143327);
+    color: #ffffff;
+  }
+  .dark .itq-logo-badge {
+    background: linear-gradient(135deg, #183e2e, #0f261d);
+    color: #e2f7eb;
+    border: 1px solid rgba(82, 183, 136, 0.25);
+  }
+}
+
+/* Strip all box-shadows and drop-shadows globally */
+*, *::before, *::after {
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  text-shadow: none !important;
 }

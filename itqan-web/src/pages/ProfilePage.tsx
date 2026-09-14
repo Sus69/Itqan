@@ -8,6 +8,7 @@ import { updateAuthMe } from '@/lib/api';
 
 export default function ProfilePage() {
   const { user, token, logout, openAuthModal, refreshUser } = useAuth();
+  const guestReferenceQari = localStorage.getItem('itqan_guest_reference_qari');
 
   const [isEditing, setIsEditing] = useState(false);
   const [fullName, setFullName] = useState(user?.full_name ?? '');
@@ -45,7 +46,7 @@ export default function ProfilePage() {
       />
 
       {saveSuccess && (
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-xs font-bold text-emerald-800 animate-fade-in flex items-center justify-between">
+        <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/15 p-4 text-xs font-bold text-emerald-700 dark:text-emerald-300 animate-fade-in flex items-center justify-between">
           <span>✓ Profile settings updated successfully!</span>
         </div>
       )}
@@ -91,7 +92,7 @@ export default function ProfilePage() {
                 >
                   {isEditing ? 'Cancel' : 'Edit Profile'}
                 </Button>
-                <Button variant="ghost" className="text-xs text-red-600 hover:bg-red-50" onClick={logout}>
+                <Button variant="ghost" className="text-xs text-error hover:bg-error-soft" onClick={logout}>
                   Sign Out
                 </Button>
               </div>
@@ -117,7 +118,7 @@ export default function ProfilePage() {
             </p>
           </div>
 
-          <div className="rounded-2xl border border-border bg-sand-50/70 p-5">
+          <div className="rounded-2xl border border-border bg-surface-1 p-5">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-3.5">
                 <div className="grid size-12 place-items-center rounded-2xl bg-brand-700 text-white shadow-sm font-bold">
@@ -125,10 +126,12 @@ export default function ProfilePage() {
                 </div>
                 <div>
                   <h4 className="font-bold text-sm text-ink">
-                    {user?.reference_qari_name || 'Mahmoud Khalil Al-Hussary'}
+                    {user?.reference_qari_name || guestReferenceQari || 'No reference Qari selected'}
                   </h4>
-                  <p className="text-xs text-brand-700 font-semibold">
-                    Target Pace: Classical Murattal · Benchmark Riwayah: Hafs 'an 'Asim
+                  <p className="text-xs text-brand-600 dark:text-brand-400 font-semibold">
+                    {user?.reference_qari_name || guestReferenceQari
+                      ? "Reference style: Hafs 'an 'Asim · choose again anytime"
+                      : 'Optional personalisation · choose a reference after a voice match'}
                   </p>
                 </div>
               </div>
@@ -136,7 +139,7 @@ export default function ProfilePage() {
               <Link to="/practice/voice-match">
                 <Button variant="gold" className="text-xs shadow-sm">
                   <Icon name="sparkle" size={14} />
-                  Re-match Voice
+                  {user?.reference_qari_name || guestReferenceQari ? 'Update reference' : 'Find a reference'}
                 </Button>
               </Link>
             </div>
@@ -144,8 +147,8 @@ export default function ProfilePage() {
 
           {/* Edit Form */}
           {isEditing && user && (
-            <form onSubmit={handleSave} className="rounded-2xl border border-brand-200 bg-brand-50/30 p-5 space-y-4 animate-fade-in">
-              <h4 className="font-bold text-xs uppercase tracking-wider text-brand-800">Edit Profile Information</h4>
+            <form onSubmit={handleSave} className="rounded-2xl border border-brand-500/30 bg-brand-500/10 p-5 space-y-4 animate-fade-in">
+              <h4 className="font-bold text-xs uppercase tracking-wider text-brand-700 dark:text-brand-400">Edit Profile Information</h4>
               
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
@@ -155,7 +158,7 @@ export default function ProfilePage() {
                     required
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    className="w-full rounded-xl border border-border bg-white px-3 py-2 text-xs text-ink focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    className="w-full rounded-xl border border-border bg-surface-1 px-3 py-2 text-xs text-ink focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-surface"
                   />
                 </div>
                 <div>
@@ -166,7 +169,7 @@ export default function ProfilePage() {
                     max={120}
                     value={targetMinutes}
                     onChange={(e) => setTargetMinutes(Number(e.target.value))}
-                    className="w-full rounded-xl border border-border bg-white px-3 py-2 text-xs text-ink focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    className="w-full rounded-xl border border-border bg-surface-1 px-3 py-2 text-xs text-ink focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-surface"
                   />
                 </div>
               </div>
@@ -176,7 +179,7 @@ export default function ProfilePage() {
                 <select
                   value={referenceQari}
                   onChange={(e) => setReferenceQari(e.target.value)}
-                  className="w-full rounded-xl border border-border bg-white px-3 py-2 text-xs text-ink focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="w-full rounded-xl border border-border bg-surface-1 px-3 py-2 text-xs text-ink focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-surface"
                 >
                   <option value="Mahmoud Khalil Al-Hussary">Mahmoud Khalil Al-Husary (Egyptian Murattal)</option>
                   <option value="Mishary Rashid Alafasy">Mishary Rashid Alafasy (Kuwaiti Melodic)</option>
@@ -206,7 +209,7 @@ export default function ProfilePage() {
                   key={acc.key}
                   type="button"
                   onClick={() => openAuthModal('demo')}
-                  className="flex items-center gap-2.5 rounded-xl border border-border bg-white p-2.5 text-left hover:border-brand-400 hover:bg-brand-50/40 transition-all text-xs"
+                  className="flex items-center gap-2.5 rounded-xl border border-border bg-surface-1 p-2.5 text-left hover:border-brand-500 hover:bg-sand-100 dark:hover:bg-surface-2 transition-all text-xs"
                 >
                   <div className={`grid size-7 place-items-center rounded-lg bg-gradient-to-br text-white font-bold text-[10px] ${acc.avatarBg}`}>
                     {acc.name.charAt(0)}
@@ -238,7 +241,7 @@ export default function ProfilePage() {
 
 function PrefRow({ title, value }: { title: string; value: string }) {
   return (
-    <div className="flex items-center justify-between rounded-xl border border-border bg-sand-50/50 px-4 py-3">
+    <div className="flex items-center justify-between rounded-xl border border-border bg-surface-1 px-4 py-3">
       <span className="text-xs font-semibold text-ink-soft">{title}</span>
       <span className="text-xs font-bold text-ink">{value}</span>
     </div>

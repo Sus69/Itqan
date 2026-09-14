@@ -1,52 +1,93 @@
-import React, { useState } from 'react';
+import { useEffect, useId, useState, type FormEvent } from 'react';
 import { useAuth, DEMO_ACCOUNTS } from '@/lib/authContext';
 import { Icon } from '@/components/Icon';
+import { Button, InlineNotice, Modal } from '@/components/ui';
 import { cn } from '@/lib/cn';
 
-export function AuthModal() {
-  const { isAuthModalOpen, authModalTab, closeAuthModal, login, register, demoLogin } =
-    useAuth();
+/**
+ * Sign in / create account / demo personas.
+ *
+ * Built on the shared Modal so it inherits the focus trap, the Escape key and
+ * the dialog semantics. The demo tab states plainly that its figures are
+ * illustrative and that a demo session may be browser-only, because the app
+ * must never imply a record the learner has not built.
+ */
+type Tab = 'login' | 'register' | 'demo';
 
-  const [tab, setTab] = useState<'login' | 'register' | 'demo'>(authModalTab);
+const TABS: { id: Tab; label: string }[] = [
+  { id: 'login', label: 'Sign in' },
+  { id: 'register', label: 'Create account' },
+  { id: 'demo', label: 'Try a demo' },
+];
+
+const HEADINGS: Record<Tab, { title: string; description: string }> = {
+  login: {
+    title: 'Sign in to Itqān',
+    description: 'Your lessons and analysed recitations follow you across devices.',
+  },
+  register: {
+    title: 'Create your account',
+    description: 'Free, and it keeps your recitation history rather than leaving it on one device.',
+  },
+  demo: {
+    title: 'Explore with a demo persona',
+    description: 'No sign-up. Pick a persona and the whole interface is available immediately.',
+  },
+};
+
+const QARI_OPTIONS = [
+  ['Mahmoud Khalil Al-Hussary', 'Mahmoud Khalil Al-Husary — Egyptian Murattal'],
+  ['Mishary Rashid Alafasy', 'Mishary Rashid Alafasy — Kuwaiti melodic'],
+  ['Abdul Basit Abdul Samad', 'Abdul Basit Abdul Samad — classic Mujawwad'],
+  ['Saad Al-Ghamdi', 'Saad Al-Ghamdi — Saudi Murattal'],
+  ['Abu Bakr Al-Shatri', 'Abu Bakr Al-Shatri — paced and emotive'],
+];
+
+const fieldClass =
+  'w-full rounded-xl border border-border bg-surface-1 px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-faint focus:border-brand-500 focus:bg-surface focus:outline-none focus:ring-2 focus:ring-brand-500/20';
+const labelClass = 'mb-1.5 block text-xs font-bold uppercase tracking-wider text-ink-soft';
+
+export function AuthModal() {
+  const { isAuthModalOpen, authModalTab, closeAuthModal, login, register, demoLogin } = useAuth();
+
+  const [tab, setTab] = useState<Tab>(authModalTab);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeDemoKey, setActiveDemoKey] = useState<string | null>(null);
+  const ids = useId();
 
-  // Login form state
   const [loginIdentifier, setLoginIdentifier] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
 
-  // Register form state
   const [regFullName, setRegFullName] = useState('');
   const [regUsername, setRegUsername] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
-  const [regQari, setRegQari] = useState('Mahmoud Khalil Al-Hussary');
+  const [regQari, setRegQari] = useState(QARI_OPTIONS[0][0]);
 
-  // Sync internal tab if modal opened with specific tab
-  React.useEffect(() => {
+  // Opening the modal with a specific tab must always win over the last one used.
+  useEffect(() => {
     setTab(authModalTab);
     setError(null);
     setActiveDemoKey(null);
   }, [authModalTab, isAuthModalOpen]);
 
-  if (!isAuthModalOpen) return null;
-
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
     setIsSubmitting(true);
     try {
       await login(loginIdentifier, loginPassword);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Login failed. Please check your credentials.';
-      setError(msg);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : 'Those details were not accepted. Please try again.',
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleRegister = async (e: React.FormEvent) => {
+  const handleRegister = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
     setIsSubmitting(true);
@@ -58,9 +99,10 @@ export function AuthModal() {
         password: regPassword,
         reference_qari_name: regQari,
       });
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Registration failed. Please verify your details.';
-      setError(msg);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : 'The account could not be created. Please try again.',
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -72,9 +114,8 @@ export function AuthModal() {
     setActiveDemoKey(accountKey);
     try {
       await demoLogin(accountKey);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Demo login failed.';
-      setError(msg);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'That demo session could not be started.');
     } finally {
       setIsSubmitting(false);
       setActiveDemoKey(null);
@@ -82,303 +123,267 @@ export function AuthModal() {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-ink/50 backdrop-blur-md transition-opacity animate-fade-in"
-        onClick={closeAuthModal}
-      />
+    <Modal
+      open={isAuthModalOpen}
+      onClose={closeAuthModal}
+      title={HEADINGS[tab].title}
+      description={HEADINGS[tab].description}
+    >
+      <div role="tablist" aria-label="Account options" className="grid grid-cols-3 gap-1 rounded-2xl bg-sand-100 p-1">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            id={`${ids}-tab-${t.id}`}
+            aria-selected={tab === t.id}
+            aria-controls={`${ids}-panel-${t.id}`}
+            onClick={() => {
+              setTab(t.id);
+              setError(null);
+            }}
+            className={cn(
+              'rounded-xl py-2 text-xs font-bold transition-all',
+              tab === t.id ? 'bg-surface text-brand-800 shadow-sm' : 'text-ink-soft hover:text-ink',
+            )}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
 
-      {/* Modal Card */}
-      <div className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-white/40 bg-white p-6 shadow-2xl transition-all sm:p-8">
-        {/* Close Button */}
-        <button
-          type="button"
-          onClick={closeAuthModal}
-          className="absolute right-5 top-5 grid size-9 place-items-center rounded-full bg-sand-100 text-ink-soft hover:bg-sand-200 hover:text-ink transition-colors"
+      {error && (
+        <InlineNotice tone="error" title="That did not work" className="mt-4">
+          {error}
+        </InlineNotice>
+      )}
+
+      {tab === 'login' && (
+        <form
+          role="tabpanel"
+          id={`${ids}-panel-login`}
+          aria-labelledby={`${ids}-tab-login`}
+          onSubmit={handleLogin}
+          className="mt-5 space-y-4"
         >
-          <Icon name="close" size={18} />
-        </button>
-
-        {/* Modal Header */}
-        <div className="mb-6 text-center">
-          <div className="mx-auto mb-3 grid size-12 place-items-center rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 text-white shadow-md">
-            <Icon name="mosque" size={24} />
+          <div>
+            <label className={labelClass} htmlFor={`${ids}-identifier`}>
+              Email or username
+            </label>
+            <input
+              id={`${ids}-identifier`}
+              type="text"
+              required
+              autoComplete="username"
+              value={loginIdentifier}
+              onChange={(e) => setLoginIdentifier(e.target.value)}
+              placeholder="ahmed@itqan.app"
+              className={fieldClass}
+            />
           </div>
-          <h2 className="text-2xl font-black tracking-tight text-ink">
-            {tab === 'login' && 'Sign in to Itqān'}
-            {tab === 'register' && 'Join the Itqān Community'}
-            {tab === 'demo' && 'Quick Demo Accounts'}
-          </h2>
-          <p className="mt-1 text-sm text-ink-soft">
-            {tab === 'login' && 'Access your personalized Tajweed progress, streaks, and recordings.'}
-            {tab === 'register' && 'Create your free account to track mastery and AI feedback.'}
-            {tab === 'demo' && 'Select an authentic pre-configured profile to explore instantly.'}
+
+          <div>
+            <label className={labelClass} htmlFor={`${ids}-password`}>
+              Password
+            </label>
+            <input
+              id={`${ids}-password`}
+              type="password"
+              required
+              autoComplete="current-password"
+              value={loginPassword}
+              onChange={(e) => setLoginPassword(e.target.value)}
+              placeholder="••••••••"
+              className={fieldClass}
+            />
+          </div>
+
+          <Button type="submit" fullWidth size="lg" loading={isSubmitting}>
+            {isSubmitting ? 'Signing in' : 'Sign in'}
+          </Button>
+
+          <p className="text-center text-xs text-ink-soft">
+            Rather look around first?{' '}
+            <button
+              type="button"
+              onClick={() => setTab('demo')}
+              className="font-bold text-brand-700 hover:underline"
+            >
+              Use a demo persona
+            </button>
           </p>
-        </div>
+        </form>
+      )}
 
-        {/* Tabs */}
-        <div className="mb-6 grid grid-cols-3 gap-1 rounded-2xl bg-sand-100 p-1">
-          <button
-            type="button"
-            onClick={() => {
-              setTab('login');
-              setError(null);
-            }}
-            className={cn(
-              'rounded-xl py-2 text-xs font-bold transition-all',
-              tab === 'login'
-                ? 'bg-white text-brand-800 shadow-sm'
-                : 'text-ink-soft hover:text-ink',
-            )}
-          >
-            Sign In
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setTab('register');
-              setError(null);
-            }}
-            className={cn(
-              'rounded-xl py-2 text-xs font-bold transition-all',
-              tab === 'register'
-                ? 'bg-white text-brand-800 shadow-sm'
-                : 'text-ink-soft hover:text-ink',
-            )}
-          >
-            Create Account
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setTab('demo');
-              setError(null);
-            }}
-            className={cn(
-              'rounded-xl py-2 text-xs font-bold transition-all',
-              tab === 'demo'
-                ? 'bg-brand-600 text-white shadow-sm'
-                : 'text-brand-700 hover:text-brand-800',
-            )}
-          >
-            ⭐ 1-Click Demo
-          </button>
-        </div>
-
-        {/* Error Alert */}
-        {error && (
-          <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-medium text-red-700">
-            {error}
+      {tab === 'register' && (
+        <form
+          role="tabpanel"
+          id={`${ids}-panel-register`}
+          aria-labelledby={`${ids}-tab-register`}
+          onSubmit={handleRegister}
+          className="mt-5 max-h-[55vh] space-y-3.5 overflow-y-auto pr-1"
+        >
+          <div>
+            <label className={labelClass} htmlFor={`${ids}-fullname`}>
+              Full name
+            </label>
+            <input
+              id={`${ids}-fullname`}
+              type="text"
+              required
+              autoComplete="name"
+              value={regFullName}
+              onChange={(e) => setRegFullName(e.target.value)}
+              placeholder="Tariq Mansoor"
+              className={fieldClass}
+            />
           </div>
-        )}
 
-        {/* Tab 1: Login */}
-        {tab === 'login' && (
-          <form onSubmit={handleLogin} className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-ink-soft mb-1.5">
-                Email or Username
+              <label className={labelClass} htmlFor={`${ids}-username`}>
+                Username
               </label>
               <input
+                id={`${ids}-username`}
                 type="text"
                 required
-                value={loginIdentifier}
-                onChange={(e) => setLoginIdentifier(e.target.value)}
-                placeholder="e.g. ahmed@itqan.app or ahmed_qari"
-                className="w-full rounded-xl border border-border bg-sand-50/50 px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-faint focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                autoComplete="username"
+                value={regUsername}
+                onChange={(e) => setRegUsername(e.target.value)}
+                placeholder="tariq_qari"
+                className={fieldClass}
               />
             </div>
-
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-ink-soft mb-1.5">
-                Password
+              <label className={labelClass} htmlFor={`${ids}-email`}>
+                Email
               </label>
               <input
-                type="password"
+                id={`${ids}-email`}
+                type="email"
                 required
-                value={loginPassword}
-                onChange={(e) => setLoginPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full rounded-xl border border-border bg-sand-50/50 px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-faint focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                autoComplete="email"
+                value={regEmail}
+                onChange={(e) => setRegEmail(e.target.value)}
+                placeholder="tariq@example.com"
+                className={fieldClass}
               />
             </div>
+          </div>
 
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full rounded-xl bg-brand-600 py-3 text-sm font-bold text-white shadow-md transition-all hover:bg-brand-700 disabled:opacity-50"
+          <div>
+            <label className={labelClass} htmlFor={`${ids}-new-password`}>
+              Password
+            </label>
+            <input
+              id={`${ids}-new-password`}
+              type="password"
+              required
+              minLength={6}
+              autoComplete="new-password"
+              value={regPassword}
+              onChange={(e) => setRegPassword(e.target.value)}
+              placeholder="At least 6 characters"
+              className={fieldClass}
+            />
+          </div>
+
+          <div>
+            <label className={labelClass} htmlFor={`${ids}-qari`}>
+              Reference Qari
+            </label>
+            <select
+              id={`${ids}-qari`}
+              value={regQari}
+              onChange={(e) => setRegQari(e.target.value)}
+              className={fieldClass}
             >
-              {isSubmitting ? 'Signing in...' : 'Sign In'}
-            </button>
-
-            <div className="pt-2 text-center text-xs text-ink-soft">
-              Want to explore without typing?{' '}
-              <button
-                type="button"
-                onClick={() => setTab('demo')}
-                className="font-bold text-brand-700 hover:underline"
-              >
-                Use 1-Click Demo Accounts
-              </button>
-            </div>
-          </form>
-        )}
-
-        {/* Tab 2: Register */}
-        {tab === 'register' && (
-          <form onSubmit={handleRegister} className="space-y-3.5 max-h-[60vh] overflow-y-auto pr-1">
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-ink-soft mb-1">
-                Full Name
-              </label>
-              <input
-                type="text"
-                required
-                value={regFullName}
-                onChange={(e) => setRegFullName(e.target.value)}
-                placeholder="e.g. Tariq Mansoor"
-                className="w-full rounded-xl border border-border bg-sand-50/50 px-3.5 py-2 text-sm text-ink placeholder:text-ink-faint focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-ink-soft mb-1">
-                  Username
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={regUsername}
-                  onChange={(e) => setRegUsername(e.target.value)}
-                  placeholder="tariq_qari"
-                  className="w-full rounded-xl border border-border bg-sand-50/50 px-3.5 py-2 text-sm text-ink placeholder:text-ink-faint focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-ink-soft mb-1">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  required
-                  value={regEmail}
-                  onChange={(e) => setRegEmail(e.target.value)}
-                  placeholder="tariq@example.com"
-                  className="w-full rounded-xl border border-border bg-sand-50/50 px-3.5 py-2 text-sm text-ink placeholder:text-ink-faint focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-ink-soft mb-1">
-                Password
-              </label>
-              <input
-                type="password"
-                required
-                minLength={6}
-                value={regPassword}
-                onChange={(e) => setRegPassword(e.target.value)}
-                placeholder="Minimum 6 characters"
-                className="w-full rounded-xl border border-border bg-sand-50/50 px-3.5 py-2 text-sm text-ink placeholder:text-ink-faint focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-ink-soft mb-1">
-                Reference Qari
-              </label>
-              <select
-                value={regQari}
-                onChange={(e) => setRegQari(e.target.value)}
-                className="w-full rounded-xl border border-border bg-sand-50/50 px-3.5 py-2 text-sm text-ink focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-              >
-                <option value="Mahmoud Khalil Al-Hussary">Mahmoud Khalil Al-Husary (Egyptian Murattal)</option>
-                <option value="Mishary Rashid Alafasy">Mishary Rashid Alafasy (Kuwaiti Melodic)</option>
-                <option value="Abdul Basit Abdul Samad">Abdul Basit Abdul Samad (Classic Mujawwad)</option>
-                <option value="Saad Al-Ghamdi">Saad Al-Ghamdi (Saudi Murattal)</option>
-                <option value="Abu Bakr Al-Shatri">Abu Bakr Al-Shatri (Paced Emotive)</option>
-              </select>
-            </div>
-
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full rounded-xl bg-brand-600 py-3 text-sm font-bold text-white shadow-md transition-all hover:bg-brand-700 disabled:opacity-50"
-            >
-              {isSubmitting ? 'Creating account...' : 'Create Account'}
-            </button>
-          </form>
-        )}
-
-        {/* Tab 3: Demo Accounts */}
-        {tab === 'demo' && (
-          <div className="space-y-3">
-            <p className="text-xs text-ink-soft leading-relaxed">
-              Click any demo persona to log in instantly with preloaded streaks, recorded masteries, and recitation logs:
+              {QARI_OPTIONS.map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1.5 text-xs text-ink-faint">
+              A preference only — you can change it any time, and it does not affect your feedback.
             </p>
+          </div>
 
-            <div className="space-y-2.5">
-              {DEMO_ACCOUNTS.map((acc) => {
-                const isSelected = activeDemoKey === acc.key;
-                return (
+          <Button type="submit" fullWidth size="lg" loading={isSubmitting}>
+            {isSubmitting ? 'Creating your account' : 'Create account'}
+          </Button>
+        </form>
+      )}
+
+      {tab === 'demo' && (
+        <div
+          role="tabpanel"
+          id={`${ids}-panel-demo`}
+          aria-labelledby={`${ids}-tab-demo`}
+          className="mt-5 space-y-3"
+        >
+          <InlineNotice tone="info" title="What a demo persona is">
+            A persona lets you use every screen straight away. Its streak and XP are illustrative
+            starting figures, not a record — and if the service is unreachable the session runs
+            entirely in this browser, so nothing is saved to an account.
+          </InlineNotice>
+
+          <ul className="space-y-2.5">
+            {DEMO_ACCOUNTS.map((acc) => {
+              const isSelected = activeDemoKey === acc.key;
+              return (
+                <li key={acc.key}>
                   <button
-                    key={acc.key}
                     type="button"
                     disabled={isSubmitting}
-                    onClick={() => handleDemoClick(acc.key)}
+                    onClick={() => void handleDemoClick(acc.key)}
                     className={cn(
-                      'group flex w-full items-center justify-between rounded-2xl border p-3.5 text-left transition-all',
+                      'group flex w-full items-center gap-3.5 rounded-2xl border p-3.5 text-left transition-all',
                       isSelected
-                        ? 'border-brand-600 bg-brand-50/80 ring-2 ring-brand-500/30'
-                        : 'border-border bg-sand-50/70 hover:border-brand-500 hover:bg-brand-50/50 hover:shadow-sm',
-                      isSubmitting && !isSelected && 'opacity-50 cursor-not-allowed',
+                        ? 'border-brand-600 bg-brand-50 ring-2 ring-brand-500/30'
+                        : 'border-border bg-surface-1 hover:border-brand-400 hover:shadow-[var(--shadow-soft)]',
+                      isSubmitting && !isSelected && 'cursor-not-allowed opacity-50',
                     )}
                   >
-                    <div className="flex items-center gap-3.5">
-                      <div
-                        className={cn(
-                          'grid size-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br text-white font-black text-sm shadow-sm',
-                          acc.avatarBg,
-                        )}
-                      >
-                        {isSelected ? (
-                          <div className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                        ) : (
-                          acc.name.charAt(0)
-                        )}
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-sm text-ink group-hover:text-brand-800">
-                            {acc.name}
-                          </span>
-                          <span className="rounded-md bg-white px-2 py-0.5 text-[10px] font-bold text-ink-soft border border-border/80">
-                            {isSelected ? 'Signing in...' : acc.role}
-                          </span>
-                        </div>
-                        <p className="text-xs text-ink-soft mt-0.5 line-clamp-1">{acc.description}</p>
-                      </div>
-                    </div>
-
-                    <div className="text-right shrink-0">
-                      <div className="flex items-center gap-1 font-bold text-xs text-gold-700">
-                        <span>🔥</span>
-                        <span>{acc.streak}d streak</span>
-                      </div>
-                      <span className="text-[11px] font-semibold text-brand-700">
-                        {acc.xp} XP
+                    <span
+                      className={cn(
+                        'grid size-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br text-sm font-black text-white shadow-sm',
+                        acc.avatarBg,
+                      )}
+                      aria-hidden="true"
+                    >
+                      {isSelected ? (
+                        <span className="anim-spin size-4 rounded-full border-2 border-white border-t-transparent" />
+                      ) : (
+                        acc.name.charAt(0)
+                      )}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex flex-wrap items-center gap-2">
+                        <span className="text-sm font-bold text-ink group-hover:text-brand-800">
+                          {acc.name}
+                        </span>
+                        <span className="rounded-md border border-border bg-surface px-2 py-0.5 text-[10px] font-bold text-ink-soft">
+                          {isSelected ? 'Signing in' : acc.role}
+                        </span>
                       </span>
-                    </div>
+                      <span className="mt-0.5 block text-xs leading-relaxed text-ink-soft">
+                        {acc.description}
+                      </span>
+                    </span>
+                    <Icon
+                      name="arrowRight"
+                      size={16}
+                      className="shrink-0 text-ink-faint group-hover:text-brand-700"
+                    />
                   </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+    </Modal>
   );
 }

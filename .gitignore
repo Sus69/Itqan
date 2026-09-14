@@ -5,12 +5,15 @@
 *.tmp
 *.lnk
 *.opus
+*.ogg
 
 # Data dumps and cache
 .gemini/
 __pycache__/
 *.pyc
 .DS_Store
+*.db-shm
+*.db-wal
 
 # Virtual environments
 venv/

@@ -4,6 +4,7 @@ import { analyzeTajweed, isInsufficientSpeech, type TajweedResult } from '@/lib/
 import { VERSES, findVerseByIdOrText, type PracticeVerse } from '@/lib/verses';
 import { RecorderPanel } from '@/components/RecorderPanel';
 import { RuleEvaluationCard } from '@/components/RuleEvaluationCard';
+import { PriorityFeedback } from '@/components/PriorityFeedback';
 import { Badge, Button, Card, ScoreRing, SectionHeader } from '@/components/ui';
 import { Icon } from '@/components/Icon';
 import { cn } from '@/lib/cn';
@@ -122,20 +123,27 @@ export default function TajweedStudioPage() {
     setPhase('select');
   };
 
+  const retrySameTarget = () => {
+    setResult(null);
+    setSpeechWarning(null);
+    setError(null);
+    setPhase('record');
+  };
+
   return (
     <div className="anim-fade-up space-y-6">
       {/* Page header */}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">
-            Tajweed Studio 🎙️
+            Guided recitation practice
           </h1>
           <p className="mt-1 text-sm text-ink-faint">
-            Recite any Quranic Aayah and get instant rule-by-rule AI feedback grounded in authentic Tajweed rules.
+            Set one target, recite at your own pace, then use one clear correction to guide your next attempt.
           </p>
         </div>
         <Badge tone="brand">
-          <Icon name="sparkle" size={13} /> 20 Aayahs · 5-Stage AI Engine
+          <Icon name="sparkle" size={13} /> Focused feedback · 5-stage AI
         </Badge>
       </div>
 
@@ -143,8 +151,8 @@ export default function TajweedStudioPage() {
         {/* ---------------- Verse picker (left column) ---------------- */}
         <Card className="h-fit space-y-4 lg:sticky lg:top-24 max-h-[85vh] flex flex-col">
           <SectionHeader
-            title="Practice Aayahs"
-            subtitle={`${filteredVerses.length} verses · Select an Aayah to recite`}
+            title="Choose a target"
+            subtitle={`${filteredVerses.length} available · Filter when you have a rule in mind`}
           />
 
           {/* Search bar */}
@@ -251,7 +259,7 @@ export default function TajweedStudioPage() {
                   <p className="text-xs font-semibold uppercase tracking-widest text-brand-100/80">
                     PRACTICE TARGET · {verse.surah} {verse.ayah}
                   </p>
-                  <p className="mt-1 text-lg font-bold">Recite with focus and calm</p>
+                  <p className="mt-1 text-lg font-bold">Listen, recite, then improve one thing</p>
                 </div>
                 <div className="grid size-12 shrink-0 place-items-center rounded-xl bg-white/12 backdrop-blur">
                   <Icon name="book" size={22} className="text-gold-300" />
@@ -270,7 +278,7 @@ export default function TajweedStudioPage() {
               {/* All Applicable Rules Badges */}
               <div className="mt-6 pt-4 border-t border-white/15">
                 <span className="text-[11px] font-extrabold uppercase tracking-wider text-gold-300 block mb-2 text-center">
-                  Applicable Tajweed Rules ({verse.focusRules.length})
+                  Skills you will be practising ({verse.focusRules.length})
                 </span>
                 <div className="flex flex-wrap items-center justify-center gap-1.5">
                   {verse.focusRules.map((r, i) => (
@@ -291,7 +299,7 @@ export default function TajweedStudioPage() {
                 onRecorded={handleRecorded}
                 busy={busy}
                 busyLabel="Evaluating recitation with Tajweed Engine…"
-                hint="Recite into your microphone — AI evaluates all applicable rules"
+                hint="When you are ready, record a calm, clear recitation"
               />
 
               {(error || speechWarning) && (
@@ -311,6 +319,7 @@ export default function TajweedStudioPage() {
           {/* ---------------- Results ---------------- */}
           {phase === 'result' && result && (
             <div className="anim-fade-up space-y-6">
+              <PriorityFeedback evaluations={result.evaluations} onRetry={retrySameTarget} />
               {/* Score ring + summary */}
               <Card className="flex flex-col items-center gap-6 sm:flex-row sm:items-center sm:gap-8 p-6">
                 <ScoreRing value={overallScore} label="Overall Score" size={136} />
@@ -332,7 +341,7 @@ export default function TajweedStudioPage() {
                   </p>
                   <div className="pt-2 flex flex-wrap items-center gap-2">
                     <Button variant="secondary" size="sm" onClick={resetAll}>
-                      <Icon name="restart" size={14} /> Try another Aayah
+                      <Icon name="restart" size={14} /> Choose another target
                     </Button>
                   </div>
                 </div>

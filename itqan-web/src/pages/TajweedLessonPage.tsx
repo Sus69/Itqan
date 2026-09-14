@@ -1,11 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { analyzeTajweed, isInsufficientSpeech, type TajweedResult } from '@/lib/api';
-import {
-  TAJWEED_INFO_CHAPTERS,
-  type TajweedChapter,
-  type QuranExtract,
-} from '@/lib/infoData';
+import { TAJWEED_INFO_CHAPTERS, type TajweedChapter, type QuranExtract } from '@/lib/infoData';
 import {
   loadCourseProgress,
   recordLessonCompletion,
@@ -13,219 +9,207 @@ import {
   isChapterUnlocked,
   type CourseProgressState,
 } from '@/lib/courseState';
-import { RecorderPanel } from '@/components/RecorderPanel';
-import { RuleEvaluationCard } from '@/components/RuleEvaluationCard';
-import { Badge, Button, Card, ProgressBar, ScoreRing, SectionHeader } from '@/components/ui';
+import { RecordingSession } from '@/components/RecordingSession';
+import { SessionFeedback } from '@/components/SessionFeedback';
+import { TargetAudio } from '@/components/TargetAudio';
+import {
+  Badge,
+  Button,
+  Card,
+  InlineNotice,
+  Modal,
+  ProgressBar,
+  StepRail,
+  VisuallyHidden,
+} from '@/components/ui';
 import { Icon } from '@/components/Icon';
+import { useAuth } from '@/lib/authContext';
+import { useServiceHealth } from '@/hooks/useServiceHealth';
+import { isPass, overallScore, pickPriority, speechMatchesTarget } from '@/lib/feedback';
+import { recordAttempt } from '@/lib/sessionLog';
 import { cn } from '@/lib/cn';
 
-type LessonTab = 'theory' | 'practice';
+type Stage = 'study' | 'recite';
 
+const TOTAL_CHAPTERS = TAJWEED_INFO_CHAPTERS.length;
+
+/** The Arabic text of an extract, as a stable retry target for the Mistake Bank. */
+function retryRoute(extract: QuranExtract): string {
+  const params = new URLSearchParams({ text: extract.text });
+  if (extract.ruleTarget) params.set('rule', extract.ruleTarget);
+  params.set('label', extractLabel(extract));
+  return `/practice/session?${params.toString()}`;
+}
+
+function extractLabel(extract: QuranExtract): string {
+  const surah =
+    typeof extract.surah === 'number' ? `Surah ${extract.surah}` : String(extract.surah ?? 'Extract');
+  return extract.ayah !== undefined ? `${surah} · Ayah ${extract.ayah}` : surah;
+}
+
+/**
+ * A Tajweed chapter: study the rule, then prove it out loud.
+ *
+ * The page has exactly one forward action at any moment. Progress is only ever
+ * recorded from an analysed recitation that matched the target — reading the
+ * theory of a chapter that has exercises never marks it passed.
+ */
 export default function TajweedLessonPage() {
   const { chapterId } = useParams<{ chapterId: string }>();
   const navigate = useNavigate();
+  const { token } = useAuth();
+  const { state: serviceState, recheck } = useServiceHealth();
 
   const [progress, setProgress] = useState<CourseProgressState>(() => loadCourseProgress());
 
-  // Find target chapter
-  const chapter = useMemo<TajweedChapter>(() => {
-    const found = TAJWEED_INFO_CHAPTERS.find((c) => c.id === chapterId);
-    return found || TAJWEED_INFO_CHAPTERS[0];
-  }, [chapterId]);
+  const chapter = useMemo<TajweedChapter>(
+    () => TAJWEED_INFO_CHAPTERS.find((c) => c.id === chapterId) ?? TAJWEED_INFO_CHAPTERS[0],
+    [chapterId],
+  );
 
   const currentIndex = TAJWEED_INFO_CHAPTERS.findIndex((c) => c.id === chapter.id);
   const prevChapter = TAJWEED_INFO_CHAPTERS[currentIndex - 1];
   const nextChapter = TAJWEED_INFO_CHAPTERS[currentIndex + 1];
-
   const unlocked = isChapterUnlocked(chapter.id, progress);
 
-  // Collect all practice extracts for this chapter
-  const allExtracts = useMemo<QuranExtract[]>(() => {
-    const list: QuranExtract[] = [];
-    for (const sub of chapter.subChapters) {
-      if (sub.examples) list.push(...sub.examples);
-    }
-    return list;
-  }, [chapter]);
-
+  const allExtracts = useMemo<QuranExtract[]>(
+    () => chapter.subChapters.flatMap((sub) => sub.examples ?? []),
+    [chapter],
+  );
   const hasExtracts = allExtracts.length > 0;
 
-  // Active Tab
-  const [activeTab, setActiveTab] = useState<LessonTab>('theory');
+  const [stage, setStage] = useState<Stage>('study');
+  const [activeIdx, setActiveIdx] = useState(0);
+  const extract = allExtracts[activeIdx] ?? null;
 
-  // Active Exercise Index
-  const [activeExtractIdx, setActiveExtractIdx] = useState(0);
-  const selectedExtract = allExtracts[activeExtractIdx] || null;
-
-  // Passed extracts for this chapter
-  const passedExtractIds = progress.passedExtractIdsByChapter[chapter.id] || [];
-  const passedCount = passedExtractIds.length;
+  const passedIds = progress.passedExtractIdsByChapter[chapter.id] ?? [];
+  const passedCount = passedIds.length;
   const isCompleted = progress.completedChapterIds.includes(chapter.id);
   const bestScore = progress.chapterScores[chapter.id];
+  const allPassed = hasExtracts && passedCount >= allExtracts.length;
 
-  // AI Evaluation State
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [speechWarning, setSpeechWarning] = useState<string | null>(null);
-  const [testResult, setTestResult] = useState<TajweedResult | null>(null);
-  const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [mismatch, setMismatch] = useState(false);
+  const [result, setResult] = useState<TajweedResult | null>(null);
+  const [celebrate, setCelebrate] = useState(false);
 
-  // Applicable rules for current test result
-  const applicableRules = useMemo(
-    () => testResult?.evaluations.filter((e) => e.applicable && e.status !== 'not_applicable') ?? [],
-    [testResult],
-  );
-
-  const avgRuleScore = useMemo(() => {
-    if (!applicableRules.length) return 85;
-    const scores = applicableRules.map((e) => e.confidence_score ?? 80);
-    return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
-  }, [applicableRules]);
-
-  // Check if speech actually matches the target verse (prevents random gibberish or noise from passing)
-  const isSpeechMatching = useMemo(() => {
-    if (!testResult) return false;
-    const sim = testResult.phrase_verification.similarity_percentage;
-    const charAcc = testResult.phrase_verification.character_accuracy_percentage;
-    return (sim >= 35.0 && charAcc >= 40.0) || sim >= 50.0 || charAcc >= 65.0;
-  }, [testResult]);
-
-  // Overall Score & Pass determination
-  const overallScore = useMemo(() => {
-    if (!testResult) return 0;
-    const charAcc = testResult.phrase_verification.character_accuracy_percentage;
-    const sim = testResult.phrase_verification.similarity_percentage;
-    const alignConf = testResult.alignment_confidence;
-
-    if (!isSpeechMatching) {
-      // Audio was gibberish, wrong language, or ambient noise
-      return Math.round(sim * 0.5 + charAcc * 0.5);
-    }
-
-    const weightedScore = Math.max(
-      avgRuleScore,
-      Math.round(charAcc * 0.5 + alignConf * 0.5),
-      Math.round(sim * 0.3 + charAcc * 0.4 + alignConf * 0.3),
-    );
-    return Math.min(100, Math.max(0, weightedScore));
-  }, [testResult, avgRuleScore, isSpeechMatching]);
-
-  const isExercisePassed = useMemo(() => {
-    if (!testResult || !isSpeechMatching) return false;
-    return (
-      overallScore >= 60 ||
-      applicableRules.some((e) => (e.confidence_score ?? 0) >= 90 || e.status === 'passed')
-    );
-  }, [testResult, overallScore, applicableRules, isSpeechMatching]);
-
-  // Handle Recording Submission for an Exercise
-  const handleRecordExercise = async (blob: Blob, fileName: string) => {
-    if (!selectedExtract) return;
-    setBusy(true);
+  const clearAttemptState = () => {
+    setResult(null);
     setError(null);
     setSpeechWarning(null);
+    setMismatch(false);
+  };
 
-    try {
-      const res = await analyzeTajweed(blob, selectedExtract.text, fileName);
-      if (isInsufficientSpeech(res)) {
-        setSpeechWarning(
-          'We could not detect clear recitation in that audio. Find a quieter space, move closer to the mic, and try again.',
-        );
-        setTestResult(null);
-      } else {
-        setTestResult(res);
+  const goToChapter = (id: string) => {
+    navigate(`/learn/tajweed/lesson/${id}`);
+    setStage('study');
+    setActiveIdx(0);
+    clearAttemptState();
+  };
 
-        const sim = res.phrase_verification.similarity_percentage;
-        const charAcc = res.phrase_verification.character_accuracy_percentage;
-        const speechMatches = (sim >= 35.0 && charAcc >= 40.0) || sim >= 50.0 || charAcc >= 65.0;
+  const handleRecording = useCallback(
+    async (blob: Blob, fileName: string) => {
+      if (!extract) return;
+      setBusy(true);
+      setError(null);
+      setSpeechWarning(null);
+      setMismatch(false);
 
-        if (speechMatches) {
-          const rules = res.evaluations.filter((e) => e.applicable && e.status !== 'not_applicable');
-          const ruleScores = rules.map((e) => e.confidence_score ?? 80);
-          const ruleAvg = ruleScores.length > 0 ? Math.round(ruleScores.reduce((a, b) => a + b, 0) / ruleScores.length) : 85;
-
-          const effectiveScore = Math.max(
-            ruleAvg,
-            Math.round(charAcc * 0.5 + res.alignment_confidence * 0.5),
-            Math.round(sim * 0.3 + charAcc * 0.4 + res.alignment_confidence * 0.3),
-          );
-
-          const passed = effectiveScore >= 60 || rules.some((e) => (e.confidence_score ?? 0) >= 90 || e.status === 'passed');
-
-          if (passed) {
-            const finalScore = Math.max(60, effectiveScore);
-            const { state: updatedState, chapterNewlyCompleted } = recordExtractPassed(
-              chapter.id,
-              selectedExtract.id,
-              finalScore,
-              allExtracts.length,
-            );
-            setProgress(updatedState);
-            if (chapterNewlyCompleted || (updatedState.passedExtractIdsByChapter[chapter.id] || []).length >= allExtracts.length) {
-              setShowCompletionModal(true);
-            }
-          }
+      try {
+        const res = await analyzeTajweed(blob, extract.text, fileName, token ?? undefined);
+        if (isInsufficientSpeech(res)) {
+          setSpeechWarning(res.details || res.message);
+          setResult(null);
+          return;
         }
+
+        const score = overallScore(res);
+        const matched = speechMatchesTarget(res);
+        const priority = pickPriority(res.evaluations);
+        const persisted = Boolean(token) && !token?.startsWith('demo_token_');
+
+        recordAttempt({
+          source: 'tajweed-lesson',
+          targetLabel: `${chapter.title} · ${extractLabel(extract)}`,
+          targetText: extract.text,
+          retryTo: retryRoute(extract),
+          score,
+          passedRules: res.evaluations.filter((e) => e.status === 'passed').length,
+          reviewRules: res.evaluations.filter(
+            (e) => e.applicable && (e.status === 'failed' || e.status === 'needs_review'),
+          ).length,
+          priorityRuleId: priority?.ruleId ?? null,
+          priorityRuleName: priority?.ruleName ?? null,
+          synced: persisted,
+        });
+
+        setResult(res);
+        setMismatch(!matched);
+
+        // Progress is credited only for a take that both matched the target and
+        // cleared the pass mark.
+        if (matched && isPass(score)) {
+          const { state, chapterNewlyCompleted } = recordExtractPassed(
+            chapter.id,
+            extract.id,
+            score,
+            allExtracts.length,
+          );
+          setProgress(state);
+          if (chapterNewlyCompleted) setCelebrate(true);
+        }
+      } catch (e) {
+        setError(
+          e instanceof Error
+            ? e.message
+            : 'The analysis service could not be reached, so this take was not scored.',
+        );
+      } finally {
+        setBusy(false);
       }
-    } catch (e) {
-      setError(
-        e instanceof Error ? e.message : 'Analysis failed. Ensure the backend server is running on port 8000.',
-      );
-    } finally {
-      setBusy(false);
-    }
+    },
+    [allExtracts.length, chapter.id, chapter.title, extract, token],
+  );
+
+  /** Theory-only chapters have nothing to measure, so nothing is scored. */
+  const markTheoryRead = () => {
+    setProgress(recordLessonCompletion(chapter.id, 0));
+    if (nextChapter) goToChapter(nextChapter.id);
+    else navigate('/learn/tajweed');
   };
 
-  // Handler to complete theoretical lessons with no practice extracts
-  const handleCompleteTheoryOnly = () => {
-    const updated = recordLessonCompletion(chapter.id, 100);
-    setProgress(updated);
-    if (nextChapter) {
-      navigate(`/learn/tajweed/lesson/${nextChapter.id}`);
-      setActiveTab('theory');
-      setTestResult(null);
-    } else {
-      navigate('/learn/tajweed');
-    }
-  };
-
-  // If chapter is locked, show lock screen
   if (!unlocked) {
     return (
-      <div className="space-y-6 anim-fade-up max-w-2xl mx-auto py-12 text-center">
-        <Card className="p-8 space-y-6 border-sand-300 bg-surface shadow-md">
-          <div className="mx-auto grid size-20 place-items-center rounded-3xl bg-sand-100 text-sand-600 shadow-inner">
-            <Icon name="lock" size={36} />
-          </div>
+      <div className="anim-fade-up mx-auto max-w-focus py-8">
+        <Card className="space-y-6 text-center">
+          <span className="mx-auto grid size-16 place-items-center rounded-2xl bg-sand-100 text-sand-600">
+            <Icon name="lock" size={30} />
+          </span>
           <div className="space-y-2">
-            <Badge tone="neutral" className="bg-sand-200 text-sand-800 font-bold">
-              Lesson Locked
-            </Badge>
-            <h1 className="text-2xl font-extrabold text-ink">
+            <Badge tone="neutral">Not open yet</Badge>
+            <h1 className="text-xl font-extrabold text-ink sm:text-2xl">
               Chapter {chapter.chapterNumber}: {chapter.title}
             </h1>
-            <p className="arabic-text text-lg text-brand-800" dir="rtl">
+            <p className="arabic-text text-lg text-brand-800" dir="rtl" lang="ar">
               {chapter.arabicTitle}
             </p>
-            <p className="text-sm text-ink-faint max-w-md mx-auto leading-relaxed pt-2">
-              Complete the previous lesson ({prevChapter?.title || 'Chapter ' + (chapter.chapterNumber - 1)}) to unlock this chapter.
+            <p className="mx-auto max-w-md pt-1 text-sm leading-relaxed text-ink-soft">
+              Chapters open in order. Finish{' '}
+              {prevChapter ? prevChapter.title : `chapter ${chapter.chapterNumber - 1}`} and this one
+              becomes available.
             </p>
           </div>
-
-          <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <div className="flex flex-wrap items-center justify-center gap-3">
             {prevChapter && (
-              <Button
-                size="lg"
-                variant="primary"
-                onClick={() => navigate(`/learn/tajweed/lesson/${prevChapter.id}`)}
-                className="w-full sm:w-auto font-bold"
-              >
-                Go to Chapter {prevChapter.chapterNumber}: {prevChapter.title} ➔
+              <Button size="lg" onClick={() => goToChapter(prevChapter.id)}>
+                Go to {prevChapter.title} <Icon name="arrowRight" size={16} />
               </Button>
             )}
-            <Link to="/learn/tajweed" className="w-full sm:w-auto">
-              <Button variant="secondary" size="lg" className="w-full">
-                Course Syllabus
+            <Link to="/learn/tajweed">
+              <Button variant="outline" size="lg">
+                Course syllabus
               </Button>
             </Link>
           </div>
@@ -234,585 +218,422 @@ export default function TajweedLessonPage() {
     );
   }
 
+  const railSteps = hasExtracts
+    ? [
+        { id: 'study', label: 'Study the rule' },
+        { id: 'recite', label: `Recite (${passedCount}/${allExtracts.length})` },
+        { id: 'done', label: 'Chapter passed' },
+      ]
+    : [
+        { id: 'study', label: 'Study the rule' },
+        { id: 'done', label: 'Marked as read' },
+      ];
+  const railCurrent = isCompleted && stage === 'study' ? 'done' : allPassed ? 'done' : stage;
+
   return (
-    <div className="space-y-6 anim-fade-up pb-24">
-      {/* ----------------- Top Header & Navigation ----------------- */}
-      <div className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <Link
-              to="/learn/tajweed"
-              className="inline-flex items-center gap-1 text-xs font-bold text-ink-faint hover:text-brand-600 transition-colors"
-            >
-              <Icon name="arrowRight" size={14} className="rotate-180" /> Syllabus
-            </Link>
-            <span className="text-ink-faint">·</span>
-            <Badge tone="brand">Chapter {chapter.chapterNumber} of 19</Badge>
-            {isCompleted ? (
-              <Badge tone="neutral" className="bg-emerald-100 text-emerald-800 border-emerald-300 font-bold">
-                <Icon name="check" size={12} /> Passed ({bestScore}%)
-              </Badge>
-            ) : hasExtracts ? (
-              <Badge tone="neutral" className="bg-sand-100 text-sand-800">
-                {passedCount} of {allExtracts.length} Exercises Passed
-              </Badge>
-            ) : (
-              <Badge tone="neutral" className="bg-brand-50 text-brand-700">
-                Foundational Concept
-              </Badge>
-            )}
-          </div>
-
-          <div className="flex items-baseline gap-3">
-            <h1 className="text-xl font-extrabold tracking-tight text-ink sm:text-2xl">
-              {chapter.title}
-            </h1>
-            <span className="arabic-text text-xl font-bold text-brand-800" dir="rtl">
-              {chapter.arabicTitle}
-            </span>
-          </div>
-        </div>
-
-        {/* Prev / Next Quick Nav */}
-        <div className="flex items-center gap-2 shrink-0">
-          {prevChapter && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                navigate(`/learn/tajweed/lesson/${prevChapter.id}`);
-                setActiveTab('theory');
-                setTestResult(null);
-              }}
-            >
-              ← Prev
-            </Button>
-          )}
-          {nextChapter && isCompleted && (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => {
-                navigate(`/learn/tajweed/lesson/${nextChapter.id}`);
-                setActiveTab('theory');
-                setTestResult(null);
-              }}
-            >
-              Next →
-            </Button>
-          )}
+    <div className="anim-fade-up mx-auto max-w-focus space-y-5">
+      {/* One navigation cluster: where you are, and one step either side. */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Link
+          to="/learn/tajweed"
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-ink-faint transition-colors hover:text-brand-700"
+        >
+          <Icon name="arrowLeft" size={14} /> Tajweed syllabus
+        </Link>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={!prevChapter}
+            onClick={() => prevChapter && goToChapter(prevChapter.id)}
+          >
+            <Icon name="arrowLeft" size={14} /> Previous
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={!nextChapter || !(isCompleted || allPassed)}
+            onClick={() => nextChapter && goToChapter(nextChapter.id)}
+          >
+            Next <Icon name="arrowRight" size={14} />
+          </Button>
         </div>
       </div>
 
-      {/* ----------------- Mode Switcher / Tab Bar ----------------- */}
-      {hasExtracts ? (
-        <div className="grid grid-cols-2 gap-2 rounded-2xl bg-surface-2 p-1.5 border border-border">
-          <button
-            type="button"
-            onClick={() => setActiveTab('theory')}
-            className={cn(
-              'flex items-center justify-center gap-2 rounded-xl py-3 text-xs font-extrabold transition-all',
-              activeTab === 'theory'
-                ? 'bg-brand-600 text-white shadow-sm'
-                : 'text-ink-soft hover:bg-surface hover:text-ink',
-            )}
-          >
-            <span>📖 1. Theory & Rules</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('practice')}
-            className={cn(
-              'flex items-center justify-center gap-2 rounded-xl py-3 text-xs font-extrabold transition-all',
-              activeTab === 'practice'
-                ? 'bg-brand-600 text-white shadow-sm'
-                : 'text-ink-soft hover:bg-surface hover:text-ink',
-            )}
-          >
-            <span>🎙️ 2. Practice Exercises ({passedCount}/{allExtracts.length})</span>
-            {passedCount === allExtracts.length && <Icon name="check" size={14} className="text-emerald-400" />}
-          </button>
+      <div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge tone="brand">
+            Chapter {chapter.chapterNumber} of {TOTAL_CHAPTERS}
+          </Badge>
+          {isCompleted && (
+            <Badge tone="success">
+              <Icon name="check" size={12} />
+              {hasExtracts && typeof bestScore === 'number' ? `Passed · ${bestScore}` : 'Read'}
+            </Badge>
+          )}
+          {!isCompleted && hasExtracts && (
+            <Badge tone="neutral">
+              {passedCount} of {allExtracts.length} exercises passed
+            </Badge>
+          )}
+          {!hasExtracts && <Badge tone="neutral">Foundational concept</Badge>}
         </div>
-      ) : (
-        <div className="rounded-2xl bg-brand-50/60 p-4 border border-brand-200/60 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-xs font-bold text-brand-800">
-            <Icon name="book" size={16} />
-            <span>Foundational Theoretical Concept · Read and master the material below</span>
+        <div className="mt-2 flex flex-wrap items-baseline gap-3">
+          <h1 className="text-xl font-extrabold tracking-tight text-ink sm:text-2xl">
+            {chapter.title}
+          </h1>
+          <span className="arabic-text text-xl font-bold text-brand-800" dir="rtl" lang="ar">
+            {chapter.arabicTitle}
+          </span>
+        </div>
+      </div>
+
+      <StepRail steps={railSteps} currentId={railCurrent} />
+
+      {/* ---------------- Stage: study ---------------- */}
+      {stage === 'study' && (
+        <Card className="space-y-6">
+          <div>
+            <h2 className="text-base font-extrabold text-ink">What this chapter covers</h2>
+            <p className="mt-1 text-sm leading-relaxed text-ink-soft">{chapter.summary}</p>
           </div>
-        </div>
-      )}
 
-      {/* ----------------- TAB 1: THEORY ----------------- */}
-      {activeTab === 'theory' && (
-        <div className="space-y-6">
-          <Card className="p-6 sm:p-8 space-y-6">
-            <div>
-              <h2 className="text-lg font-extrabold text-ink">Lesson Objectives & Core Principles</h2>
-              <p className="mt-1 text-sm text-ink-faint leading-relaxed">{chapter.summary}</p>
-            </div>
-
-            <div className="space-y-8">
-              {chapter.subChapters.map((sub) => (
-                <div key={sub.id} className="space-y-4 rounded-2xl bg-surface-2/60 p-5 sm:p-6 border border-border/80">
-                  <div className="flex flex-wrap items-baseline justify-between gap-2">
-                    <h3 className="text-base font-bold text-ink sm:text-lg">{sub.title}</h3>
-                    {sub.arabicTitle && (
-                      <span className="arabic-text text-lg font-semibold text-brand-700" dir="rtl">
-                        {sub.arabicTitle}
-                      </span>
-                    )}
-                  </div>
-
-                  {sub.description && (
-                    <p className="text-sm leading-relaxed text-ink-soft">{sub.description}</p>
+          <div className="space-y-6">
+            {chapter.subChapters.map((sub) => (
+              <section
+                key={sub.id}
+                className="space-y-4 rounded-2xl border border-border bg-surface-1 p-5"
+              >
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <h3 className="text-base font-bold text-ink">{sub.title}</h3>
+                  {sub.arabicTitle && (
+                    <span className="arabic-text text-lg font-semibold text-brand-700" dir="rtl" lang="ar">
+                      {sub.arabicTitle}
+                    </span>
                   )}
+                </div>
 
-                  {/* Mnemonics & Duration */}
+                {sub.description && (
+                  <p className="text-sm leading-relaxed text-ink-soft">{sub.description}</p>
+                )}
+
+                {(sub.mnemonic || sub.duration) && (
                   <div className="flex flex-wrap gap-2">
                     {sub.mnemonic && (
-                      <span className="inline-flex items-center gap-1.5 rounded-xl bg-gold-50 border border-gold-200 px-3.5 py-1.5 text-xs font-bold text-gold-900">
+                      <span className="inline-flex items-center gap-1.5 rounded-xl border border-gold-200 bg-gold-50 px-3 py-1.5 text-xs font-bold text-gold-900">
                         <Icon name="sparkle" size={13} className="text-gold-600" />
                         {sub.mnemonic}
                       </span>
                     )}
                     {sub.duration && (
-                      <span className="inline-flex items-center gap-1.5 rounded-xl bg-brand-50 border border-brand-200 px-3.5 py-1.5 text-xs font-bold text-brand-800">
+                      <span className="inline-flex items-center gap-1.5 rounded-xl border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-bold text-brand-800">
                         <Icon name="practice" size={13} className="text-brand-600" />
-                        Duration: {sub.duration}
+                        Held for {sub.duration}
                       </span>
                     )}
                   </div>
+                )}
 
-                  {/* Extra Notes */}
-                  {sub.extraNotes && sub.extraNotes.length > 0 && (
-                    <ul className="space-y-2 rounded-xl bg-surface p-4 border border-border text-xs leading-relaxed text-ink-soft">
-                      {sub.extraNotes.map((note, idx) => (
-                        <li key={idx} className="flex items-start gap-2">
-                          <span className="mt-1 size-1.5 rounded-full bg-brand-600 shrink-0" />
-                          <span>{note}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                {sub.extraNotes && sub.extraNotes.length > 0 && (
+                  <ul className="space-y-2 rounded-xl border border-border bg-surface p-4 text-xs leading-relaxed text-ink-soft">
+                    {sub.extraNotes.map((note, idx) => (
+                      <li key={idx} className="flex items-start gap-2">
+                        <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-brand-600" />
+                        <span>{note}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
 
-                  {/* Urdu Explanation */}
-                  {sub.urduNote && (
-                    <div className="rounded-xl border border-sand-300 bg-sand-50 p-4 text-right" dir="rtl">
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-sand-600 block mb-1">
-                        Urdu Explanation (اردو وضاحت)
-                      </span>
-                      <p className="arabic-text text-sm font-semibold text-ink">{sub.urduNote}</p>
-                    </div>
-                  )}
-
-                  {/* Makhaarij Table */}
-                  {sub.makhaarijRows && sub.makhaarijRows.length > 0 && (
-                    <div className="overflow-x-auto rounded-xl border border-border bg-surface">
-                      <table className="w-full text-left text-xs">
-                        <thead className="border-b border-border bg-surface-2 text-ink-faint font-bold uppercase tracking-wider">
-                          <tr>
-                            <th className="px-4 py-3">Group</th>
-                            <th className="px-4 py-3">Letters</th>
-                            <th className="px-4 py-3">Place of Origin</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-border">
-                          {sub.makhaarijRows.map((row, idx) => (
-                            <tr key={idx} className="hover:bg-sand-50/50">
-                              <td className="px-4 py-3 font-bold text-ink">{row.group}</td>
-                              <td className="arabic-text px-4 py-3 text-base font-bold text-brand-700" dir="rtl">
-                                {row.letters}
-                              </td>
-                              <td className="px-4 py-3 text-ink-soft">{row.origin}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-
-                  {/* Target Letters */}
-                  {sub.ruleLetters && sub.ruleLetters.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                      <span className="text-xs font-bold text-ink-faint mr-2">Target Letters:</span>
-                      {sub.ruleLetters.map((ltr) => (
-                        <span
-                          key={ltr}
-                          className="arabic-text inline-grid size-9 place-items-center rounded-xl bg-brand-100 text-lg font-extrabold text-brand-800 border border-brand-200"
-                          dir="rtl"
-                        >
-                          {ltr}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {/* Bottom Action in Theory */}
-            <div className="pt-4 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
-              {hasExtracts ? (
-                <>
-                  <p className="text-xs text-ink-faint">
-                    Ready to practice? Complete all {allExtracts.length} exercises with the AI Checker to pass.
-                  </p>
-                  <Button size="lg" onClick={() => setActiveTab('practice')} className="font-bold w-full sm:w-auto">
-                    Start {allExtracts.length} Practice Exercises ➔
-                  </Button>
-                </>
-              ) : (
-                <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl bg-brand-50 p-5 border border-brand-200">
-                  <div>
-                    <h3 className="font-bold text-brand-900">Finished Reading Concept?</h3>
-                    <p className="text-xs text-brand-700 mt-0.5">
-                      Mark this foundational lesson as completed to unlock the next chapter.
-                    </p>
+                {sub.urduNote && (
+                  <div className="rounded-xl border border-sand-300 bg-sand-50 p-4 text-right" dir="rtl">
+                    <span className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-sand-700">
+                      Urdu explanation (اردو وضاحت)
+                    </span>
+                    <p className="arabic-text text-sm font-semibold text-ink">{sub.urduNote}</p>
                   </div>
-                  <Button size="lg" variant="primary" onClick={handleCompleteTheoryOnly} className="font-bold shrink-0">
-                    Complete & Move to Next Lesson ➔
-                  </Button>
-                </div>
-              )}
-            </div>
-          </Card>
-        </div>
+                )}
+
+                {sub.makhaarijRows && sub.makhaarijRows.length > 0 && (
+                  <div className="overflow-x-auto rounded-xl border border-border bg-surface">
+                    <table className="w-full text-left text-xs">
+                      <caption className="sr-only">
+                        Articulation points covered by {sub.title}
+                      </caption>
+                      <thead className="border-b border-border bg-surface-2 font-bold uppercase tracking-wider text-ink-faint">
+                        <tr>
+                          <th scope="col" className="px-4 py-3">Group</th>
+                          <th scope="col" className="px-4 py-3">Letters</th>
+                          <th scope="col" className="px-4 py-3">Place of origin</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {sub.makhaarijRows.map((row, idx) => (
+                          <tr key={idx}>
+                            <td className="px-4 py-3 font-bold text-ink">{row.group}</td>
+                            <td className="arabic-text px-4 py-3 text-base font-bold text-brand-700" dir="rtl" lang="ar">
+                              {row.letters}
+                            </td>
+                            <td className="px-4 py-3 text-ink-soft">{row.origin}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {sub.ruleLetters && sub.ruleLetters.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="mr-1 text-xs font-bold text-ink-faint">Letters affected:</span>
+                    {sub.ruleLetters.map((letter) => (
+                      <span
+                        key={letter}
+                        className="arabic-text inline-grid size-9 place-items-center rounded-xl border border-brand-200 bg-brand-100 text-lg font-extrabold text-brand-800"
+                        dir="rtl"
+                        lang="ar"
+                      >
+                        {letter}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </section>
+            ))}
+          </div>
+
+          {/* The single forward action for this stage. */}
+          <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-5">
+            {hasExtracts ? (
+              <>
+                <p className="max-w-prose text-xs leading-relaxed text-ink-faint">
+                  {allPassed
+                    ? 'You have already recited every exercise in this chapter.'
+                    : `Next: recite ${allExtracts.length} short extract${allExtracts.length === 1 ? '' : 's'} so the engine can check this rule in your own voice.`}
+                </p>
+                <Button size="lg" onClick={() => setStage('recite')}>
+                  <Icon name="mic" size={17} />
+                  {allPassed ? 'Recite again' : `Start reciting (${allExtracts.length})`}
+                </Button>
+              </>
+            ) : (
+              <>
+                <p className="max-w-prose text-xs leading-relaxed text-ink-faint">
+                  This chapter is reference material with nothing to recite, so no score is recorded
+                  for it. Marking it read opens the next chapter.
+                </p>
+                <Button size="lg" onClick={markTheoryRead}>
+                  <Icon name="check" size={17} /> Mark as read and continue
+                </Button>
+              </>
+            )}
+          </div>
+        </Card>
       )}
 
-      {/* ----------------- TAB 2: INTERACTIVE PRACTICE EXERCISES ----------------- */}
-      {activeTab === 'practice' && hasExtracts && selectedExtract && (
-        <div className="space-y-6">
-          {/* Progress Tracker Card */}
-          <Card className="p-5 space-y-4 bg-surface">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+      {/* ---------------- Stage: recite ---------------- */}
+      {stage === 'recite' && hasExtracts && extract && (
+        <div className="space-y-4">
+          <Card className="space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
                 <h2 className="text-sm font-bold text-ink">
-                  Chapter Exercises Progress: {passedCount} of {allExtracts.length} Completed
+                  Exercise {activeIdx + 1} of {allExtracts.length}
                 </h2>
                 <p className="text-xs text-ink-faint">
-                  You must recite and pass every exercise in this chapter to unlock the next lesson.
+                  Every exercise must be recited and passed to complete the chapter.
                 </p>
               </div>
-              <span className="text-sm font-extrabold text-brand-700 tabular-nums">
-                {Math.round((passedCount / allExtracts.length) * 100)}% Done
-              </span>
+              <Button variant="ghost" size="sm" onClick={() => setStage('study')}>
+                <Icon name="book" size={14} /> Back to the rule
+              </Button>
             </div>
 
             <ProgressBar value={(passedCount / allExtracts.length) * 100} />
 
-            {/* Stepper Pills for all extracts */}
-            <div className="flex flex-wrap gap-2 pt-2">
+            <ol className="flex flex-wrap gap-2">
               {allExtracts.map((ex, idx) => {
-                const isPassed = passedExtractIds.includes(ex.id);
-                const isActive = idx === activeExtractIdx;
+                const done = passedIds.includes(ex.id);
+                const active = idx === activeIdx;
                 return (
-                  <button
-                    key={ex.id}
-                    type="button"
-                    onClick={() => {
-                      setActiveExtractIdx(idx);
-                      setTestResult(null);
-                    }}
-                    className={cn(
-                      'flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all',
-                      isActive
-                        ? 'bg-brand-600 text-white shadow-sm ring-2 ring-brand-500/30'
-                        : isPassed
-                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                          : 'bg-surface-2 text-ink-soft border border-border hover:border-brand-300',
-                    )}
-                  >
-                    <span>{idx + 1}</span>
-                    {isPassed ? (
-                      <Icon name="check" size={12} className="text-emerald-700" />
-                    ) : (
-                      ex.ruleTarget && <span className="opacity-75">({ex.ruleTarget})</span>
-                    )}
-                  </button>
+                  <li key={ex.id}>
+                    <button
+                      type="button"
+                      aria-current={active ? 'true' : undefined}
+                      onClick={() => {
+                        setActiveIdx(idx);
+                        clearAttemptState();
+                      }}
+                      className={cn(
+                        'flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition-colors',
+                        active
+                          ? 'border-brand-600 bg-brand-600 text-white'
+                          : done
+                            ? 'border-success/30 bg-success-soft text-success'
+                            : 'border-border bg-surface-2 text-ink-soft hover:border-brand-300',
+                      )}
+                    >
+                      <span className="tabular-nums">{idx + 1}</span>
+                      {done && (
+                        <>
+                          <Icon name="check" size={12} />
+                          <VisuallyHidden>passed</VisuallyHidden>
+                        </>
+                      )}
+                    </button>
+                  </li>
                 );
               })}
-            </div>
+            </ol>
           </Card>
 
-          {/* Active Exercise Target Card */}
-          <Card className="p-6 sm:p-8 space-y-6">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
-              <div>
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-brand-700">
-                  Exercise {activeExtractIdx + 1} of {allExtracts.length}
-                </span>
-                <h3 className="text-base font-bold text-ink">
-                  {typeof selectedExtract.surah === 'number' ? `Surah ${selectedExtract.surah}` : selectedExtract.surah}
-                  {selectedExtract.ayah !== undefined && ` · Ayah ${selectedExtract.ayah}`}
-                </h3>
-              </div>
-
-              <div className="flex items-center gap-2">
-                {selectedExtract.ruleTarget && (
-                  <Badge tone="brand" className="font-bold">
-                    Focus: {selectedExtract.ruleTarget}
-                  </Badge>
-                )}
-                {passedExtractIds.includes(selectedExtract.id) && (
-                  <Badge tone="neutral" className="bg-emerald-100 text-emerald-800 border-emerald-300 font-bold">
+          <Card className="space-y-5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-sm font-bold text-ink">{extractLabel(extract)}</h3>
+              <div className="flex flex-wrap items-center gap-2">
+                {extract.ruleTarget && <Badge tone="brand">Focus: {extract.ruleTarget}</Badge>}
+                {passedIds.includes(extract.id) && (
+                  <Badge tone="success">
                     <Icon name="check" size={12} /> Passed
                   </Badge>
                 )}
               </div>
             </div>
 
-            {/* Quranic Text */}
-            <div className="rounded-3xl bg-gradient-to-br from-brand-900 via-brand-850 to-brand-800 p-6 sm:p-8 text-white text-center shadow-lg">
-              <p
-                className="quran-text leading-[2.6] text-white select-none"
-                style={{ fontSize: 'clamp(1.6rem, 2.8vw + 0.6rem, 2.6rem)' }}
-                dir="rtl"
-                lang="ar"
-              >
-                {selectedExtract.text}
+            <div className="rounded-2xl bg-gradient-to-br from-brand-900 via-brand-850 to-brand-800 p-6 text-center sm:p-8">
+              <p className="quran-text quran-lg select-none text-white" dir="rtl" lang="ar">
+                {extract.text}
               </p>
             </div>
 
-            {/* Recorder Section */}
-            <div className="space-y-4">
-              <RecorderPanel
-                onRecorded={handleRecordExercise}
-                busy={busy}
-                busyLabel="Evaluating your recitation with Tajweed Engine…"
-                hint="Recite into your microphone"
-              />
+            <TargetAudio text={extract.text} label="Hear this extract" />
 
-              {(error || speechWarning) && (
-                <p
-                  className={cn(
-                    'flex items-start gap-2 rounded-xl px-4 py-3 text-sm font-medium',
-                    error ? 'bg-error-soft text-error' : 'bg-warning-soft text-warning',
-                  )}
-                >
-                  <Icon name={error ? 'alert' : 'info'} size={16} className="mt-0.5 shrink-0" />
-                  <span>{error ?? speechWarning}</span>
-                </p>
-              )}
-            </div>
+            <RecordingSession
+              onSubmit={handleRecording}
+              busy={busy}
+              busyLabel="Checking this rule in your recitation"
+              resetKey={extract.id}
+              serviceAvailable={serviceState !== 'unavailable'}
+              onRetryService={recheck}
+              guidance="Recite just this extract. You will hear your take before it is sent."
+            />
 
-            {/* Exercise Evaluation Feedback */}
-            {testResult && (
-              <div className="space-y-4 pt-4 border-t border-border anim-fade-up">
-                <div
-                  className={cn(
-                    'flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl p-5 border',
-                    isExercisePassed
-                      ? 'bg-emerald-50/80 border-emerald-300 text-emerald-950'
-                      : 'bg-warning-soft/60 border-warning text-ink',
-                  )}
-                >
-                  <div className="flex items-center gap-4">
-                    <ScoreRing value={overallScore} label="Score" size={80} />
-                    <div>
-                      <h4 className="font-extrabold text-base">
-                        {isExercisePassed
-                          ? (overallScore >= 95
-                              ? 'Masha Allah! Exceptional pronunciation & Tajweed'
-                              : 'Exercise Passed! Rule articulation verified ✅')
-                          : 'Needs Practice — Try reciting again'}
-                      </h4>
-                      <p className="text-xs opacity-80 mt-0.5">
-                        Similarity: {testResult.phrase_verification.similarity_percentage.toFixed(1)}% ·
-                        Character Accuracy: {testResult.phrase_verification.character_accuracy_percentage.toFixed(1)}% ·
-                        Tajweed Score: {avgRuleScore}%
-                      </p>
-                    </div>
-                  </div>
+            {speechWarning && (
+              <InlineNotice tone="warning" title="No clear recitation was detected" live>
+                {speechWarning} Nothing was scored, so this take does not count against you — move
+                closer to the microphone and record again.
+              </InlineNotice>
+            )}
 
-                  <div className="flex flex-wrap items-center gap-2">
-                    {isExercisePassed && activeExtractIdx < allExtracts.length - 1 && (
-                      <Button
-                        size="lg"
-                        variant="primary"
-                        onClick={() => {
-                          setActiveExtractIdx((i) => i + 1);
-                          setTestResult(null);
-                        }}
-                        className="font-bold shrink-0"
-                      >
-                        Next Exercise ({activeExtractIdx + 2}/{allExtracts.length}) ➔
-                      </Button>
-                    )}
-                    {isExercisePassed && activeExtractIdx === allExtracts.length - 1 && (
-                      <Button
-                        size="lg"
-                        variant="primary"
-                        onClick={() => {
-                          if (nextChapter) {
-                            navigate(`/learn/tajweed/lesson/${nextChapter.id}`);
-                            setActiveTab('theory');
-                            setTestResult(null);
-                          } else {
-                            navigate('/learn/tajweed');
-                          }
-                        }}
-                        className="font-bold shrink-0"
-                      >
-                        Complete Chapter & Continue ➔
-                      </Button>
-                    )}
+            {error && (
+              <InlineNotice
+                tone="error"
+                title="That take could not be analysed"
+                action={
+                  <Button variant="secondary" size="sm" onClick={recheck}>
+                    <Icon name="restart" size={14} /> Check the service
+                  </Button>
+                }
+              >
+                {error}
+              </InlineNotice>
+            )}
+
+            {mismatch && (
+              <InlineNotice tone="warning" title="That did not match this extract" live>
+                The engine analysed your audio but could not line it up with the words above, so the
+                exercise has not been marked passed. Check you are reciting the highlighted extract
+                and try again.
+              </InlineNotice>
+            )}
+          </Card>
+
+          {result && (
+            <SessionFeedback
+              score={overallScore(result)}
+              evaluations={result.evaluations}
+              alignment={result.alignment}
+              targetText={extract.text}
+              onRetry={clearAttemptState}
+              retryLabel="Recite this extract again"
+              storageNote={
+                token && !token.startsWith('demo_token_')
+                  ? 'Saved to your account and to this device.'
+                  : 'Saved on this device only. Sign in to keep your history across devices.'
+              }
+              nextAction={
+                passedIds.includes(extract.id) ? (
+                  activeIdx < allExtracts.length - 1 ? (
                     <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setTestResult(null)}
-                      className="text-xs"
+                      size="lg"
+                      onClick={() => {
+                        setActiveIdx((i) => i + 1);
+                        clearAttemptState();
+                      }}
                     >
-                      <Icon name="restart" size={13} /> Re-try
+                      Next exercise ({activeIdx + 2} of {allExtracts.length}){' '}
+                      <Icon name="arrowRight" size={16} />
                     </Button>
-                  </div>
-                </div>
-
-                {/* Applicable Rule Evaluations */}
-                <div className="space-y-3 pt-2">
-                  <SectionHeader
-                    title="Tajweed Rule Evaluations"
-                    subtitle="Feedback on detected articulation & pronunciation rules"
-                  />
-                  {applicableRules.map((ev, idx) => (
-                    <RuleEvaluationCard key={ev.rule_id + idx} evaluation={ev} />
-                  ))}
-                </div>
-              </div>
-            )}
-          </Card>
+                  ) : nextChapter && allPassed ? (
+                    <Button size="lg" onClick={() => goToChapter(nextChapter.id)}>
+                      Continue to {nextChapter.title} <Icon name="arrowRight" size={16} />
+                    </Button>
+                  ) : (
+                    <Link to="/learn/tajweed">
+                      <Button size="lg">
+                        Back to the syllabus <Icon name="arrowRight" size={16} />
+                      </Button>
+                    </Link>
+                  )
+                ) : (
+                  <Link to="/practice/review">
+                    <Button variant="outline">
+                      <Icon name="note" size={16} /> Add to focused review
+                    </Button>
+                  </Link>
+                )
+              }
+            />
+          )}
         </div>
       )}
 
-      {/* ----------------- Sticky Bottom Action Bar ----------------- */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-surface/95 border-t border-border px-4 py-3.5 backdrop-blur shadow-2xl">
-        <div className="max-w-5xl mx-auto flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            {prevChapter ? (
+      <Modal
+        open={celebrate}
+        onClose={() => setCelebrate(false)}
+        title={`Chapter ${chapter.chapterNumber} complete`}
+        description={`You recited and passed all ${allExtracts.length} exercise${allExtracts.length === 1 ? '' : 's'} in ${chapter.title}.`}
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setCelebrate(false)}>
+              Stay here
+            </Button>
+            {nextChapter ? (
               <Button
-                variant="ghost"
-                size="sm"
                 onClick={() => {
-                  navigate(`/learn/tajweed/lesson/${prevChapter.id}`);
-                  setActiveTab('theory');
-                  setTestResult(null);
+                  setCelebrate(false);
+                  goToChapter(nextChapter.id);
                 }}
               >
-                ← Prev Chapter
+                Continue to {nextChapter.title} <Icon name="arrowRight" size={16} />
               </Button>
             ) : (
-              <span className="text-xs font-semibold text-ink-faint">Chapter 1 of 19</span>
-            )}
-          </div>
-
-          {/* Center Status */}
-          <div className="text-center hidden sm:block">
-            {isCompleted ? (
-              <span className="text-xs font-bold text-emerald-700 flex items-center gap-1 justify-center">
-                <Icon name="check" size={14} /> Chapter {chapter.chapterNumber} Completed ({bestScore}%)
-              </span>
-            ) : hasExtracts ? (
-              <span className="text-xs font-semibold text-ink-soft">
-                {passedCount} of {allExtracts.length} exercises passed (all required to unlock next chapter)
-              </span>
-            ) : (
-              <span className="text-xs font-semibold text-ink-soft">
-                Foundational Concept Reading
-              </span>
-            )}
-          </div>
-
-          {/* Right Action */}
-          <div>
-            {isCompleted && nextChapter ? (
               <Button
-                size="md"
-                variant="primary"
                 onClick={() => {
-                  navigate(`/learn/tajweed/lesson/${nextChapter.id}`);
-                  setActiveTab('theory');
-                  setTestResult(null);
+                  setCelebrate(false);
+                  navigate('/learn/tajweed');
                 }}
-                className="font-extrabold shadow-md"
               >
-                Next Chapter: {nextChapter.title} ➔
-              </Button>
-            ) : isCompleted && !nextChapter ? (
-              <Button
-                size="md"
-                variant="primary"
-                onClick={() => navigate('/learn/tajweed')}
-                className="font-extrabold"
-              >
-                Course Syllabus ➔
-              </Button>
-            ) : !hasExtracts ? (
-              <Button
-                size="md"
-                variant="primary"
-                onClick={handleCompleteTheoryOnly}
-                className="font-extrabold"
-              >
-                Complete & Unlock Next ➔
-              </Button>
-            ) : (
-              <Button size="md" variant="secondary" disabled className="opacity-60 cursor-not-allowed">
-                <Icon name="lock" size={14} /> Next Lesson Locked
+                Back to the syllabus
               </Button>
             )}
-          </div>
-        </div>
-      </div>
-
-      {/* ----------------- Chapter Completed Celebration Modal ----------------- */}
-      {showCompletionModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm anim-fade-up">
-          <Card className="max-w-md text-center p-6 sm:p-8 space-y-5 bg-surface shadow-2xl border-emerald-500 border-2">
-            <div className="mx-auto grid size-16 place-items-center rounded-full bg-emerald-100 text-emerald-700 shadow-inner">
-              <Icon name="check" size={32} />
-            </div>
-            <div className="space-y-1.5">
-              <h3 className="text-xl font-extrabold text-ink">Chapter {chapter.chapterNumber} Completed! 🎉</h3>
-              <p className="text-xs font-bold text-brand-700">{chapter.title} ({chapter.arabicTitle})</p>
-              <p className="text-xs text-ink-faint pt-1 leading-relaxed">
-                Masha&apos;Allah! You have successfully recited and passed all {allExtracts.length} practice exercises.
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-2 pt-2">
-              {nextChapter ? (
-                <Button
-                  size="lg"
-                  variant="primary"
-                  onClick={() => {
-                    setShowCompletionModal(false);
-                    navigate(`/learn/tajweed/lesson/${nextChapter.id}`);
-                    setActiveTab('theory');
-                    setTestResult(null);
-                  }}
-                  className="font-bold shadow-lg"
-                >
-                  Continue to Chapter {nextChapter.chapterNumber}: {nextChapter.title} ➔
-                </Button>
-              ) : (
-                <Button
-                  size="lg"
-                  variant="primary"
-                  onClick={() => {
-                    setShowCompletionModal(false);
-                    navigate('/learn/tajweed');
-                  }}
-                >
-                  Return to Syllabus Overview
-                </Button>
-              )}
-              <Button variant="ghost" size="sm" onClick={() => setShowCompletionModal(false)}>
-                Stay on this lesson
-              </Button>
-            </div>
-          </Card>
-        </div>
-      )}
+          </>
+        }
+      >
+        <p className="text-sm leading-relaxed text-ink-soft">
+          Your chapter score is the average of those exercises. Anything the engine flagged along the
+          way is waiting in focused review.
+        </p>
+      </Modal>
     </div>
   );
 }

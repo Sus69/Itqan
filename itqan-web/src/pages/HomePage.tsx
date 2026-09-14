@@ -1,186 +1,250 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { PageHeader } from '@/components/PageHeader';
 import { Badge, Button, Card, ProgressBar, SectionHeader } from '@/components/ui';
-import { Icon } from '@/components/Icon';
-import { VERSES } from '@/lib/verses';
+import { Icon, type IconName } from '@/components/Icon';
+import { getLearningGoal } from '@/lib/learnerGoal';
+import { loadCourseProgress } from '@/lib/courseState';
+import { loadQaidaState } from '@/lib/qaidaState';
+import { loadAttempts, weakRules } from '@/lib/sessionLog';
+import { resolveNextStep } from '@/lib/nextStep';
+import { QAIDA_LESSONS } from '@/lib/qaidaData';
+import { TAJWEED_INFO_CHAPTERS } from '@/lib/infoData';
 import { useAuth } from '@/lib/authContext';
 
 /**
- * HOM-001 Home Dashboard — designed around continuation, not discovery.
- * Answers one question: "What should I do next?"
+ * Today — one recommended action, and nothing that competes with it.
+ *
+ * Everything shown is derived from stored progress at mount, so the page cannot
+ * recommend a lesson the learner has already finished or report a streak that
+ * has not been earned.
  */
 export default function HomePage() {
-  const { user } = useAuth();
-  const nextVerse = VERSES[0];
+  const { user, isDemo } = useAuth();
 
-  const displayName = user?.full_name || user?.username || 'Learner';
+  // Read local progress once: it cannot change while this page is on screen.
+  const [snapshot] = useState(() => {
+    const qaida = loadQaidaState();
+    const course = loadCourseProgress();
+    const attempts = loadAttempts();
+    return { qaida, course, attempts, goal: getLearningGoal() ?? 'tajweed' };
+  });
+
+  const next = resolveNextStep(snapshot.goal, snapshot);
+  const outstanding = weakRules(snapshot.attempts).length;
+  const displayName = user?.full_name?.split(' ')[0] || user?.username || 'friend';
+
+  const qaidaTotal = QAIDA_LESSONS.length;
+  const qaidaDone = snapshot.qaida.completedLessonIds.length;
+  const tajweedTotal = TAJWEED_INFO_CHAPTERS.length;
+  const tajweedDone = snapshot.course.completedChapterIds.length;
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title={`Assalamu alaikum, ${displayName}`}
-        subtitle="Here is your next step toward a more confident, beautiful recitation."
-      />
+    <div className="anim-fade-up mx-auto max-w-shell space-y-7">
+      <section>
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand-700">Today</p>
+        <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-ink sm:text-4xl">
+          Assalamu alaikum, {displayName}
+        </h1>
+        <p className="mt-2 max-w-xl text-sm leading-relaxed text-ink-soft">
+          One calm, focused session is enough for meaningful progress.
+        </p>
+      </section>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Continue learning (CMP-NAV-001) */}
-        <Card className="lg:col-span-2 overflow-hidden p-0">
-          <div className="rounded-2xl bg-gradient-to-br from-brand-800 via-brand-700 to-brand-600 p-6 text-white sm:p-8">
-            <Badge className="bg-white/15 text-white backdrop-blur">
-              <Icon name="learn" size={13} /> Continue Learning
-            </Badge>
-            <h2 className="mt-3 text-xl font-extrabold sm:text-2xl">
-              Tajweed Studio · {nextVerse.surah} {nextVerse.ayah}
-            </h2>
-            <p
-              className="quran-text mt-4 leading-[2.4] text-white/95"
-              dir="rtl"
-              lang="ar"
-              style={{ fontSize: 'clamp(1.3rem, 2vw + 0.4rem, 1.9rem)' }}
+      {/* The single recommendation. */}
+      <Card className="overflow-hidden p-0 border-0">
+        <div className="itq-hero-banner rounded-2xl p-7 sm:p-9">
+          <Badge tone="hero" className="itq-hero-badge">
+            <Icon name={next.icon} size={13} /> {next.eyebrow}
+          </Badge>
+          <h2 className="mt-4 max-w-xl text-2xl font-extrabold tracking-tight sm:text-3xl text-white">
+            {next.title}
+          </h2>
+          <p className="mt-3 max-w-lg text-sm leading-relaxed text-emerald-100/90">{next.body}</p>
+          <div className="mt-7 flex flex-wrap items-center gap-4">
+            <Link to={next.to}>
+              <Button size="lg" variant="gold">
+                {next.cta} <Icon name="arrowRight" size={17} />
+              </Button>
+            </Link>
+            <Link
+              to="/learn"
+              className="text-sm font-bold text-gold-300 underline-offset-4 hover:text-gold-200 hover:underline"
             >
-              {nextVerse.text}
-            </p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link to="/practice/tajweed">
-                <Button variant="gold" size="lg">
-                  <Icon name="mic" size={18} />
-                  Start practicing
-                </Button>
-              </Link>
-              <Link to="/learn">
-                <Button
-                  size="lg"
-                  variant="secondary"
-                  className="border-white/25 bg-white/10 text-white hover:bg-white/20"
-                >
-                  View curriculum
-                </Button>
-              </Link>
-            </div>
+              Or choose something else
+            </Link>
           </div>
-        </Card>
+        </div>
+      </Card>
 
-        {/* Voice match nudge (HOM-001 Voice Match Pending state) */}
-        <Card className="flex flex-col justify-between overflow-hidden bg-gradient-to-b from-gold-50 to-surface">
-          <div>
-            <div className="mb-3 grid size-12 place-items-center rounded-2xl bg-gold-500 text-white shadow-[var(--shadow-soft)]">
-              <Icon name="sparkle" size={22} />
+      {/* Retention: only shown when there is something real to review. */}
+      {outstanding > 0 && (
+        <Card className="flex flex-wrap items-center justify-between gap-4 border-warning/30 bg-warning-soft">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-surface text-warning">
+              <Icon name="note" size={20} />
+            </span>
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-ink">
+                {outstanding} rule{outstanding === 1 ? '' : 's'} waiting to be revisited
+              </p>
+              <p className="mt-0.5 text-xs leading-relaxed text-ink-soft">
+                Each one comes from a recording you made. Reciting that target cleanly clears it.
+              </p>
             </div>
-            <h3 className="text-lg font-bold text-ink">
-              {user?.reference_qari_name ? `Matched Qari: ${user.reference_qari_name}` : 'Find your reference Qari'}
-            </h3>
-            <p className="mt-1 text-sm leading-relaxed text-ink-faint">
-              {user?.reference_qari_name
-                ? 'Your recitation benchmarks and pronunciation targets are personalized to this Qari.'
-                : 'A 30-second voice match personalizes every lesson with a reciter suited to you.'}
-            </p>
           </div>
-          <Link to="/practice/voice-match" className="mt-5">
-            <Button variant="gold" fullWidth>
-              <Icon name="mic" size={17} />
-              {user?.reference_qari_name ? 'Change reference Qari' : 'Match my voice'}
+          <Link to="/practice/review" className="shrink-0">
+            <Button variant="secondary">
+              Open focused review <Icon name="arrowRight" size={15} />
             </Button>
           </Link>
         </Card>
-      </div>
+      )}
 
-      {/* Daily progress + pillars */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-1">
-          <SectionHeader title="Today's focus" subtitle="Small, consistent steps" />
+      <div className="grid gap-5 lg:grid-cols-[1.15fr_.85fr]">
+        <Card>
+          <SectionHeader
+            title="Continue your learning"
+            subtitle="Counted from lessons you have actually completed."
+          />
           <div className="space-y-4">
-            <div>
-              <div className="mb-1.5 flex items-center justify-between text-sm">
-                <span className="font-semibold text-ink">Recitations reviewed</span>
-                <span className="font-bold tabular-nums text-brand-700">0 / 3</span>
-              </div>
-              <ProgressBar value={12} />
-            </div>
-            <div>
-              <div className="mb-1.5 flex items-center justify-between text-sm">
-                <span className="font-semibold text-ink">Daily Streak</span>
-                <span className="font-bold tabular-nums text-brand-700">
-                  🔥 {user?.streak_days || 0} days
-                </span>
-              </div>
-              <ProgressBar value={Math.min(100, ((user?.streak_days || 1) / 30) * 100)} tone="gold" />
-            </div>
-            <p className="rounded-lg bg-brand-50 px-3 py-2 text-xs font-medium text-brand-800">
-              Tip: one focused Tajweed recording a day builds lasting confidence.
-            </p>
+            <ProgressRow
+              icon="book"
+              title="Qaida foundation"
+              done={qaidaDone}
+              total={qaidaTotal}
+              unit="lessons"
+              to="/learn/qaida"
+            />
+            <ProgressRow
+              icon="learn"
+              title="Tajweed course"
+              done={tajweedDone}
+              total={tajweedTotal}
+              unit="chapters"
+              to="/learn/tajweed"
+            />
           </div>
         </Card>
 
-        {/* Three pillars (product-ecosystem.md) */}
-        <Card className="lg:col-span-2">
-          <SectionHeader title="Your recitation ecosystem" subtitle="Three pillars, one journey" />
-          <div className="grid gap-3 sm:grid-cols-3">
-            <PillarTile
-              icon="wave"
-              tint="gold"
-              title="Voice Matching"
-              body="Discover the Qari whose voice naturally matches yours."
-              to="/practice/voice-match"
-              cta="Start"
-            />
-            <PillarTile
-              icon="book"
-              tint="sand"
-              title="Qaida"
-              body="Learn Arabic reading and articulation from the very beginning."
-              to="/learn/qaida"
-              cta="Open"
-            />
-            <PillarTile
+        <Card className="border-border bg-surface-1">
+          <SectionHeader
+            title="Choose a different route"
+            subtitle="For when today’s recommendation is not what you need."
+          />
+          <div className="space-y-1.5">
+            <QuickLink
+              to="/practice/session"
               icon="practice"
-              tint="brand"
-              title="Tajweed"
-              body="Recite and receive rule-by-rule AI feedback."
-              to="/practice/tajweed"
-              cta="Open"
+              title="Practice a verse"
+              body="Record a target and work through one correction."
+            />
+            <QuickLink
+              to="/practice/articulation"
+              icon="wave"
+              title="Explore articulation"
+              body="Review where each Arabic sound is made."
+            />
+            <QuickLink
+              to="/insights"
+              icon="progress"
+              title="See your record"
+              body="Completed lessons and analysed attempts."
+            />
+            <QuickLink
+              to="/reference/tajweed"
+              icon="book"
+              title="Look something up"
+              body="The full Tajweed reference, rule by rule."
             />
           </div>
+
+          {isDemo && (
+            <p className="mt-4 border-t border-border pt-3 text-xs leading-relaxed text-ink-faint">
+              You are exploring with a demo persona. Everything works, but progress stays in this
+              browser rather than on an account.
+            </p>
+          )}
         </Card>
       </div>
     </div>
   );
 }
 
-function PillarTile({
+function ProgressRow({
   icon,
-  tint,
   title,
-  body,
+  done,
+  total,
+  unit,
   to,
-  cta,
-  soon = false,
 }: {
-  icon: 'wave' | 'book' | 'practice';
-  tint: 'brand' | 'gold' | 'sand';
+  icon: IconName;
   title: string;
-  body: string;
+  done: number;
+  total: number;
+  unit: string;
   to: string;
-  cta: string;
-  soon?: boolean;
 }) {
-  const tints: Record<string, string> = {
-    brand: 'bg-brand-50 text-brand-700',
-    gold: 'bg-gold-100 text-gold-700',
-    sand: 'bg-sand-100 text-sand-600',
-  };
+  const percent = total > 0 ? Math.round((done / total) * 100) : 0;
   return (
     <Link
       to={to}
-      className="group flex flex-col rounded-xl border border-border bg-surface p-4 transition-all hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-[var(--shadow-lift)]"
+      className="itq-progress-card group block rounded-2xl p-4"
     >
-      <div className={`mb-3 grid size-10 place-items-center rounded-xl ${tints[tint]}`}>
-        <Icon name={icon} size={20} />
+      <div className="flex items-center gap-3">
+        <span className="itq-progress-icon grid size-10 shrink-0 place-items-center rounded-xl">
+          <Icon name={icon} size={19} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-bold text-ink">{title}</p>
+            <span className="text-xs font-extrabold tabular-nums text-brand-700 dark:text-emerald-400">
+              {done}/{total}
+            </span>
+          </div>
+          <p className="mt-0.5 text-xs text-ink-faint">
+            {done === 0 ? `Not started — ${total} ${unit}` : `${done} of ${total} ${unit} completed`}
+          </p>
+        </div>
+        <Icon
+          name="arrowRight"
+          size={16}
+          className="shrink-0 text-ink-faint transition-transform group-hover:translate-x-1 group-hover:text-brand-700 dark:group-hover:text-emerald-400"
+        />
       </div>
-      <h4 className="text-sm font-bold text-ink">{title}</h4>
-      <p className="mt-1 flex-1 text-xs leading-relaxed text-ink-faint">{body}</p>
-      <span className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-brand-700 transition-transform group-hover:translate-x-0.5">
-        {soon ? 'Coming soon' : cta} <Icon name="arrowRight" size={13} />
+      <ProgressBar value={percent} className="mt-3" />
+    </Link>
+  );
+}
+
+function QuickLink({
+  to,
+  icon,
+  title,
+  body,
+}: {
+  to: string;
+  icon: IconName;
+  title: string;
+  body: string;
+}) {
+  return (
+    <Link
+      to={to}
+      className="itq-quicklink group flex items-center gap-3 rounded-xl p-2"
+    >
+      <span className="itq-quicklink-icon grid size-9 shrink-0 place-items-center rounded-lg">
+        <Icon name={icon} size={17} />
       </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-bold text-ink">{title}</span>
+        <span className="block text-xs text-ink-faint">{body}</span>
+      </span>
+      <Icon
+        name="arrowRight"
+        size={15}
+        className="shrink-0 text-ink-faint group-hover:text-brand-700 dark:group-hover:text-emerald-400"
+      />
     </Link>
   );
 }

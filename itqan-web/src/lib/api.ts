@@ -209,8 +209,29 @@ export interface QariProfile {
 
 /* ----------------------------- Endpoints ----------------------------- */
 
+/**
+ * Robust fetch wrapper that attempts direct API_BASE request, and seamlessly
+ * falls back through the Vite development proxy if a direct network/CORS error occurs.
+ */
+async function apiFetch(endpoint: string, init?: RequestInit): Promise<Response> {
+  const targetUrl = endpoint.startsWith('http') ? endpoint : `${API_BASE}${endpoint}`;
+  try {
+    return await fetch(targetUrl, init);
+  } catch (err) {
+    // If direct connection to API_BASE fails (e.g. IPv6 localhost resolution mismatch in dev), try Vite proxy
+    if (!endpoint.startsWith('http')) {
+      try {
+        return await fetch(endpoint, init);
+      } catch {
+        /* proxy fallback failed as well */
+      }
+    }
+    throw err;
+  }
+}
+
 export async function getHealth(signal?: AbortSignal): Promise<HealthStatus> {
-  const res = await fetch(`${API_BASE}/health`, { signal });
+  const res = await apiFetch('/health', { signal });
   if (!res.ok) await parseError(res);
   return res.json();
 }
@@ -218,7 +239,7 @@ export async function getHealth(signal?: AbortSignal): Promise<HealthStatus> {
 export async function matchVoice(file: Blob, filename = 'recording.webm'): Promise<VoiceMatchResponse> {
   const form = new FormData();
   form.append('file', file, filename);
-  const res = await fetch(`${API_BASE}/api/v1/matcher/recommend`, {
+  const res = await apiFetch('/api/v1/matcher/recommend', {
     method: 'POST',
     body: form,
   });
@@ -241,7 +262,7 @@ export async function analyzeTajweed(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${API_BASE}/api/v1/tajweed/analyze`, {
+  const res = await apiFetch('/api/v1/tajweed/analyze', {
     method: 'POST',
     headers,
     body: form,
@@ -259,7 +280,7 @@ export async function registerUser(payload: {
   password: string;
   reference_qari_name?: string;
 }): Promise<AuthTokenResponse> {
-  const res = await fetch(`${API_BASE}/api/v1/auth/register`, {
+  const res = await apiFetch('/api/v1/auth/register', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -272,7 +293,7 @@ export async function loginUser(payload: {
   username_or_email: string;
   password: string;
 }): Promise<AuthTokenResponse> {
-  const res = await fetch(`${API_BASE}/api/v1/auth/login`, {
+  const res = await apiFetch('/api/v1/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -282,7 +303,7 @@ export async function loginUser(payload: {
 }
 
 export async function getAuthMe(token: string): Promise<AuthUser> {
-  const res = await fetch(`${API_BASE}/api/v1/auth/me`, {
+  const res = await apiFetch('/api/v1/auth/me', {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) await parseError(res);
@@ -293,7 +314,7 @@ export async function updateAuthMe(
   token: string,
   payload: { full_name?: string; reference_qari_name?: string; target_daily_minutes?: number }
 ): Promise<AuthUser> {
-  const res = await fetch(`${API_BASE}/api/v1/auth/me`, {
+  const res = await apiFetch('/api/v1/auth/me', {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -308,7 +329,7 @@ export async function updateAuthMe(
 /* ----------------------------- User Progress APIs ----------------------------- */
 
 export async function getUserProgressOverview(token: string): Promise<UserStatsResponse> {
-  const res = await fetch(`${API_BASE}/api/v1/users/me/progress`, {
+  const res = await apiFetch('/api/v1/users/me/progress', {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) await parseError(res);
@@ -326,7 +347,7 @@ export async function saveUserProgress(
     ayahs_recited?: number;
   }
 ): Promise<LessonProgressItem> {
-  const res = await fetch(`${API_BASE}/api/v1/users/me/progress`, {
+  const res = await apiFetch('/api/v1/users/me/progress', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -339,7 +360,7 @@ export async function saveUserProgress(
 }
 
 export async function getUserRecitations(token: string, limit = 20): Promise<{ total: number; recitations: RecitationHistoryItem[] }> {
-  const res = await fetch(`${API_BASE}/api/v1/users/me/recitations?limit=${limit}`, {
+  const res = await apiFetch(`/api/v1/users/me/recitations?limit=${limit}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) await parseError(res);
@@ -350,9 +371,9 @@ export async function getUserRecitations(token: string, limit = 20): Promise<{ t
 
 export async function getQarisList(query?: string, limit = 250): Promise<{ total: number; qaris: QariProfile[] }> {
   const url = query
-    ? `${API_BASE}/api/v1/qaris?query=${encodeURIComponent(query)}&limit=${limit}`
-    : `${API_BASE}/api/v1/qaris?limit=${limit}`;
-  const res = await fetch(url);
+    ? `/api/v1/qaris?query=${encodeURIComponent(query)}&limit=${limit}`
+    : `/api/v1/qaris?limit=${limit}`;
+  const res = await apiFetch(url);
   if (!res.ok) await parseError(res);
   return res.json();
 }

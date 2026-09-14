@@ -1,292 +1,342 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PageHeader } from '@/components/PageHeader';
-import { Card, Badge, Button } from '@/components/ui';
-import { Icon, type IconName } from '@/components/Icon';
+import { Badge, Button, Card, EmptyState, InlineNotice } from '@/components/ui';
+import { Icon } from '@/components/Icon';
 import { MAKHAARIJ_DATA } from '@/lib/qaidaData';
-import { speakArabic } from '@/lib/qaidaAudio';
+import { onVoicesChanged, speakArabic, speechSupport, stopSpeaking } from '@/lib/qaidaAudio';
 
-type CategoryFilter = 'All' | 'Halqee' | 'Lisaani' | 'Shafawi' | 'Jawfee' | 'Khaysoom';
+/**
+ * The articulation atlas — reference, not a lesson.
+ *
+ * It answers one question: where in the mouth or throat does this letter come
+ * from? So it is a browse-and-inspect surface with no progress, no score and no
+ * completion. It is reached from Practice and from a Qa'idah lesson, and it says
+ * plainly that its audio is a synthesised guide rather than recitation.
+ */
+type CategoryKey = 'All' | 'Halqee' | 'Lisaani' | 'Shafawi' | 'Jawfee' | 'Khaysoom';
+
+const CATEGORY_LABELS: Record<Exclude<CategoryKey, 'All'>, string> = {
+  Halqee: 'Throat · الحلق',
+  Lisaani: 'Tongue · اللسان',
+  Shafawi: 'Lips · الشفتان',
+  Jawfee: 'Oral cavity · الجوف',
+  Khaysoom: 'Nose · الخيشوم',
+};
+
+const DISCOVERY_LETTERS = [
+  'ب', 'ق', 'ك', 'ع', 'ح', 'غ', 'خ', 'ط', 'د', 'ت',
+  'ص', 'س', 'ز', 'ف', 'م', 'ن', 'ل', 'ر', 'ض',
+];
 
 export default function MakhaarijExplorerPage() {
-  const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>('All');
-  const [activeMakhrajId, setActiveMakhrajId] = useState<string>(MAKHAARIJ_DATA[0].id);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
-
-  // Discovery simulator state
+  const [category, setCategory] = useState<CategoryKey>('All');
+  const [query, setQuery] = useState('');
+  const [activeId, setActiveId] = useState(MAKHAARIJ_DATA[0].id);
+  const [playing, setPlaying] = useState<string | null>(null);
   const [discoveryLetter, setDiscoveryLetter] = useState('ب');
 
-  const filteredMakharij = MAKHAARIJ_DATA.filter((m) => {
-    const matchesCategory = selectedCategory === 'All' || m.category === selectedCategory;
-    const matchesSearch =
-      m.nameEnglish.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      m.nameArabic.includes(searchQuery) ||
-      m.letters.some((l) => l.includes(searchQuery)) ||
-      m.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
+  const [speech, setSpeech] = useState(speechSupport);
+  useEffect(() => {
+    const unsubscribe = onVoicesChanged(() => setSpeech(speechSupport()));
+    return () => {
+      unsubscribe();
+      stopSpeaking();
+    };
+  }, []);
+
+  // Counts come from the data so a new entry cannot leave a stale number behind.
+  const categories = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const m of MAKHAARIJ_DATA) counts.set(m.category, (counts.get(m.category) ?? 0) + 1);
+    return [
+      { key: 'All' as CategoryKey, label: `All ${MAKHAARIJ_DATA.length} points`, count: MAKHAARIJ_DATA.length },
+      ...(Object.keys(CATEGORY_LABELS) as Exclude<CategoryKey, 'All'>[]).map((key) => ({
+        key,
+        label: CATEGORY_LABELS[key],
+        count: counts.get(key) ?? 0,
+      })),
+    ];
+  }, []);
+
+  const needle = query.trim().toLowerCase();
+  const results = MAKHAARIJ_DATA.filter((m) => {
+    const inCategory = category === 'All' || m.category === category;
+    const matches =
+      needle.length === 0 ||
+      m.nameEnglish.toLowerCase().includes(needle) ||
+      m.nameArabic.includes(query.trim()) ||
+      m.subRegion.toLowerCase().includes(needle) ||
+      m.letters.some((l) => l.includes(query.trim())) ||
+      m.description.toLowerCase().includes(needle);
+    return inCategory && matches;
   });
 
-  const activeMakhraj =
-    MAKHAARIJ_DATA.find((m) => m.id === activeMakhrajId) || MAKHAARIJ_DATA[0];
+  const active = MAKHAARIJ_DATA.find((m) => m.id === activeId) ?? MAKHAARIJ_DATA[0];
 
-  const handlePlayLetter = async (text: string) => {
-    try {
-      setIsPlayingAudio(true);
-      await speakArabic(text, 0.8);
-    } finally {
-      setIsPlayingAudio(false);
-    }
+  const play = async (text: string) => {
+    if (speech === 'unsupported') return;
+    setPlaying(text);
+    await speakArabic(text, 0.8);
+    setPlaying((current) => (current === text ? null : current));
   };
 
-  const categories: { key: CategoryFilter; label: string; count: number; icon: IconName }[] = [
-    { key: 'All', label: 'All 17 Points', count: MAKHAARIJ_DATA.length, icon: 'book' },
-    { key: 'Halqee', label: 'Throat (الحلق)', count: 3, icon: 'voice' },
-    { key: 'Lisaani', label: 'Tongue (اللسان)', count: 10, icon: 'practice' },
-    { key: 'Shafawi', label: 'Lips (الشفتان)', count: 2, icon: 'sparkle' },
-    { key: 'Jawfee', label: 'Oral Cavity (الجوف)', count: 1, icon: 'play' },
-    { key: 'Khaysoom', label: 'Nasal (الخيشوم)', count: 1, icon: 'check' },
-  ];
-
   return (
-    <div className="space-y-8 pb-16">
-      {/* Navigation Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <Link
-            to="/qaida"
-            className="mb-2 inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:text-brand-700"
-          >
-            <Icon name="arrow-left" size={14} />
-            Back to Qa'idah Roadmap
-          </Link>
-          <PageHeader
-            title="Interactive Makhaarij Articulation Atlas"
-            subtitle="Explore the 17 authentic anatomical points of exit (مخارج الحروف) across the vocal tract."
-          />
-        </div>
-        <Link to="/qaida/lesson/1">
-          <Button variant="primary">
-            <Icon name="play" size={16} />
-            Start Lesson 1 (Mufridat)
-          </Button>
-        </Link>
-      </div>
+    <div className="anim-fade-up mx-auto max-w-shell space-y-6 pb-16">
+      <Link
+        to="/practice"
+        className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-700 hover:text-brand-800"
+      >
+        <Icon name="arrowLeft" size={14} />
+        Practice
+      </Link>
 
-      {/* Discovery Algorithm Hero Card */}
-      <Card className="relative overflow-hidden border-brand-200 bg-gradient-to-br from-brand-50/70 via-sand-50/50 to-gold-50/40 p-6 sm:p-7">
-        <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-          <div className="max-w-2xl space-y-2">
-            <div className="inline-flex items-center gap-2">
-              <Badge tone="gold">Universal Phonetic Tool</Badge>
-              <span className="text-xs font-bold uppercase tracking-wider text-ink-faint">
-                Makhraj Discovery Algorithm
-              </span>
-            </div>
-            <h3 className="text-xl font-black text-ink">
-              How to find any letter's exact origin point:
-            </h3>
-            <p className="text-sm leading-relaxed text-ink-soft">
-              Place a <strong>Sukoon (ْ)</strong> on any Arabic letter and precede it with a{' '}
-              <strong>Hamzah carrying a Fathah (أَ)</strong>. Wherever the airflow halts or resonates in your mouth/throat is that letter's exact Makhraj.
+      <PageHeader
+        title="Articulation atlas"
+        subtitle={`Where each Arabic letter is produced — all ${MAKHAARIJ_DATA.length} points of articulation (مخارج الحروف), from the bottom of the throat to the nose.`}
+      />
+
+      {speech !== 'ready' && (
+        <InlineNotice
+          tone="warning"
+          title={
+            speech === 'unsupported'
+              ? 'This browser cannot play the pronunciation guide'
+              : 'No Arabic voice is installed'
+          }
+        >
+          {speech === 'unsupported'
+            ? 'The descriptions and letter groupings still work. To hear the guide, open Itqān in Chrome, Edge or Safari.'
+            : 'The guide will fall back to a non-Arabic voice, which will not sound correct. Adding an Arabic language pack in your system settings fixes it.'}
+        </InlineNotice>
+      )}
+
+      {/* The discovery drill: the one technique that makes the whole atlas usable. */}
+      <Card className="border-border bg-surface-1">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="max-w-2xl">
+            <Badge tone="gold">Technique</Badge>
+            <h2 className="mt-2.5 text-lg font-extrabold text-ink">
+              How to find any letter's point of articulation
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-ink-soft">
+              Put a sukoon on the letter and precede it with a hamzah carrying a fathah — أَ‍ــْ.
+              Wherever the airflow stops or resonates is that letter's makhraj. It works for every
+              letter, which is why it is worth learning before the list below.
             </p>
           </div>
 
-          {/* Interactive simulator widget */}
-          <div className="flex flex-col items-center rounded-2xl border border-brand-200/80 bg-white/80 p-4 shadow-sm backdrop-blur-sm sm:flex-row sm:gap-4">
-            <div className="text-center sm:text-right">
-              <p className="text-xs font-bold text-ink-faint">Discovery Drill</p>
-              <p className="font-arabic text-3xl font-bold text-brand-700">
-                أَ{discoveryLetter}ْ
-              </p>
-            </div>
-            <div className="mt-3 flex items-center gap-2 sm:mt-0">
+          <div className="shrink-0 rounded-2xl border border-border bg-surface p-4 shadow-[var(--shadow-soft)]">
+            <p className="text-xs font-bold uppercase tracking-wider text-ink-faint">Try it</p>
+            <p className="arabic-text mt-1 text-3xl font-bold text-brand-700 dark:text-brand-300" dir="rtl" lang="ar">
+              أَ{discoveryLetter}ْ
+            </p>
+            <div className="mt-3 flex items-center gap-2">
+              <label className="sr-only" htmlFor="discovery-letter">
+                Letter to test
+              </label>
               <select
-                aria-label="Select letter to discover"
+                id="discovery-letter"
                 value={discoveryLetter}
                 onChange={(e) => setDiscoveryLetter(e.target.value)}
-                className="rounded-lg border border-sand-300 bg-white px-2.5 py-1.5 font-arabic text-base font-bold text-ink shadow-xs focus:border-brand-500 focus:outline-none"
+                className="arabic-text rounded-lg border border-border bg-surface-1 px-2.5 py-1.5 text-base text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
               >
-                {['ب', 'ق', 'ك', 'ع', 'ح', 'غ', 'خ', 'ط', 'د', 'ت', 'ص', 'س', 'ز', 'ف', 'م', 'ن', 'ل', 'ر', 'ض'].map(
-                  (char) => (
-                    <option key={char} value={char}>
-                      {char}
-                    </option>
-                  )
-                )}
+                {DISCOVERY_LETTERS.map((char) => (
+                  <option key={char} value={char}>
+                    {char}
+                  </option>
+                ))}
               </select>
               <Button
                 size="sm"
-                variant="primary"
-                onClick={() => handlePlayLetter(`أَ${discoveryLetter}ْ`)}
-                disabled={isPlayingAudio}
+                disabled={speech === 'unsupported' || playing !== null}
+                onClick={() => play(`أَ${discoveryLetter}ْ`)}
               >
-                <Icon name="play" size={14} />
-                Listen
+                <Icon name="play" size={14} /> Hear the guide
               </Button>
             </div>
           </div>
         </div>
       </Card>
 
-      {/* Category Pills & Search */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap gap-2">
-          {categories.map((cat) => (
+      {/* Filters */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by region">
+          {categories.map((c) => (
             <button
-              key={cat.key}
-              onClick={() => setSelectedCategory(cat.key)}
-              className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition-all ${
-                selectedCategory === cat.key
-                  ? 'bg-brand-600 text-white shadow-sm ring-2 ring-brand-500/20'
+              key={c.key}
+              type="button"
+              onClick={() => setCategory(c.key)}
+              aria-pressed={category === c.key}
+              className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition-colors ${
+                category === c.key
+                  ? 'bg-brand-600 text-white shadow-[var(--shadow-soft)]'
                   : 'border border-border bg-surface-1 text-ink-soft hover:bg-sand-100'
               }`}
             >
-              <Icon name={cat.icon} size={14} />
-              <span>{cat.label}</span>
+              {c.label}
               <span
-                className={`rounded-full px-1.5 py-0.2 text-[10px] ${
-                  selectedCategory === cat.key ? 'bg-brand-700 text-white' : 'bg-sand-200 text-ink-soft'
+                className={`rounded-full px-1.5 text-[10px] tabular-nums ${
+                  category === c.key ? 'bg-brand-800 text-white' : 'bg-sand-200 text-ink-soft'
                 }`}
               >
-                {cat.count}
+                {c.count}
               </span>
             </button>
           ))}
         </div>
 
         <div className="relative w-full sm:w-64">
+          <label className="sr-only" htmlFor="makhraj-search">
+            Search points of articulation
+          </label>
           <input
-            type="text"
-            placeholder="Search letters, regions..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-xl border border-border bg-surface-1 py-2 pr-4 pl-9 text-xs text-ink placeholder:text-ink-faint focus:border-brand-500 focus:outline-none"
+            id="makhraj-search"
+            type="search"
+            placeholder="Search a letter or region"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="w-full rounded-xl border border-border bg-surface-1 py-2.5 pl-9 pr-3 text-sm text-ink placeholder:text-ink-faint focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
           />
-          <span className="absolute top-2.5 left-3 text-ink-faint">
-            <Icon name="search" size={14} />
+          <span aria-hidden="true" className="absolute left-3 top-3 text-ink-faint">
+            <Icon name="search" size={15} />
           </span>
         </div>
       </div>
 
-      {/* Main Grid: Left List + Right Active Inspector */}
-      <div className="grid gap-6 lg:grid-cols-12">
-        {/* Left Column: Makhraj Card Cards */}
-        <div className="space-y-3 lg:col-span-5">
-          {filteredMakharij.map((m) => {
-            const isSelected = m.id === activeMakhrajId;
-            return (
-              <div
-                key={m.id}
-                onClick={() => setActiveMakhrajId(m.id)}
-                className={`group cursor-pointer rounded-2xl border p-4 transition-all duration-150 ${
-                  isSelected
-                    ? 'border-brand-500 bg-brand-50/40 shadow-sm ring-1 ring-brand-500/20'
-                    : 'border-border bg-surface-1 hover:border-brand-300 hover:bg-sand-50/60'
-                }`}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold uppercase tracking-wider text-brand-600">
-                        {m.categoryTitle}
+      {results.length === 0 ? (
+        <EmptyState
+          icon={<Icon name="search" size={22} />}
+          title="Nothing matches that"
+          body="Try a single Arabic letter, or a region such as “tongue”."
+          action={
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setQuery('');
+                setCategory('All');
+              }}
+            >
+              Show all points
+            </Button>
+          }
+        />
+      ) : (
+        <div className="grid gap-6 lg:grid-cols-12">
+          {/* The list. Selecting an item changes the inspector beside it. */}
+          <ul className="list-none space-y-3 lg:col-span-5">
+            {results.map((m) => {
+              const selected = m.id === activeId;
+              return (
+                <li key={m.id}>
+                  <button
+                    type="button"
+                    onClick={() => setActiveId(m.id)}
+                    aria-pressed={selected}
+                    className={`w-full rounded-2xl border p-4 text-left transition-colors ${
+                      selected
+                        ? 'border-brand-500 bg-brand-50 ring-1 ring-brand-500/20'
+                        : 'border-border bg-surface-1 hover:border-brand-300 hover:bg-sand-50'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-[11px] font-bold uppercase tracking-wider text-brand-700">
+                          {m.categoryTitle}
+                        </p>
+                        <p className="mt-1 text-sm font-bold text-ink">{m.nameEnglish}</p>
+                        <p className="mt-0.5 line-clamp-1 text-xs text-ink-faint">{m.subRegion}</p>
+                      </div>
+                      <span
+                        className="arabic-text shrink-0 text-lg text-ink-soft"
+                        dir="rtl"
+                        lang="ar"
+                      >
+                        {m.letters.join(' ، ')}
                       </span>
-                      {m.acousticTag && (
-                        <span className="rounded-md bg-sand-100 px-1.5 py-0.5 text-[10px] font-semibold text-ink-faint">
-                          {m.acousticTag}
-                        </span>
-                      )}
                     </div>
-                    <h4 className="text-sm font-bold text-ink">{m.nameEnglish}</h4>
-                    <p className="line-clamp-1 text-xs text-ink-faint">{m.subRegion}</p>
-                  </div>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
 
-                  <div className="flex flex-col items-end">
-                    <span className="font-arabic text-lg font-bold text-ink-soft">
-                      {m.letters.join(' ، ')}
-                    </span>
-                    {m.lettersArabicName && (
-                      <span className="font-arabic text-[11px] text-brand-700">
-                        {m.lettersArabicName}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Right Column: Deep Makhraj Anatomical Inspector */}
-        <div className="lg:col-span-7">
-          <div className="sticky top-20">
-            <Card className="border-brand-200/80 bg-white p-6 shadow-md sm:p-7">
-              {/* Card Header */}
-              <div className="flex flex-col gap-4 border-b border-sand-100 pb-5 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <Badge tone="brand">{activeMakhraj.categoryTitle}</Badge>
-                    <span className="text-xs font-bold text-ink-faint">
-                      {activeMakhraj.subRegion}
-                    </span>
-                  </div>
-                  <h3 className="mt-1 text-xl font-black text-ink">
-                    {activeMakhraj.nameEnglish}
-                  </h3>
-                  <p className="font-arabic text-base font-bold text-brand-700">
-                    {activeMakhraj.nameArabic}
+          {/* The inspector. */}
+          <div className="lg:col-span-7">
+            <Card className="lg:sticky lg:top-24">
+              <div className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
+                  <Badge tone="brand">{active.categoryTitle}</Badge>
+                  <h2 className="mt-2 text-xl font-extrabold text-ink">{active.nameEnglish}</h2>
+                  <p className="arabic-text mt-0.5 text-base text-brand-700" dir="rtl" lang="ar">
+                    {active.nameArabic}
                   </p>
+                  <p className="mt-1 text-xs text-ink-faint">{active.subRegion}</p>
                 </div>
-
                 <Button
                   size="sm"
                   variant="secondary"
-                  onClick={() => handlePlayLetter(activeMakhraj.discoveryExample)}
-                  disabled={isPlayingAudio}
+                  className="shrink-0"
+                  disabled={speech === 'unsupported' || playing !== null}
+                  onClick={() => play(active.discoveryExample)}
                 >
                   <Icon name="play" size={14} />
-                  Listen Test ({activeMakhraj.discoveryExample})
+                  Hear the drill
                 </Button>
               </div>
 
-              {/* Letters Spotlight Grid */}
               <div className="mt-5">
                 <p className="text-xs font-bold uppercase tracking-wider text-ink-faint">
-                  Associated Letters ({activeMakhraj.letters.length})
+                  Letters from this point ({active.letters.length}) — tap to hear the guide
                 </p>
-                <div className="mt-2 flex flex-wrap gap-3">
-                  {activeMakhraj.letters.map((letter) => (
-                    <button
-                      key={letter}
-                      onClick={() => handlePlayLetter(letter)}
-                      className="group flex size-14 items-center justify-center rounded-2xl border border-sand-200 bg-sand-50/60 font-arabic text-2xl font-bold text-ink transition-all hover:scale-105 hover:border-brand-500 hover:bg-brand-50 hover:text-brand-700"
-                    >
-                      {letter}
-                    </button>
+                <ul className="mt-2.5 flex list-none flex-wrap gap-3">
+                  {active.letters.map((letter) => (
+                    <li key={letter}>
+                      <button
+                        type="button"
+                        disabled={speech === 'unsupported'}
+                        onClick={() => play(letter)}
+                        aria-label={`Hear the letter ${letter}`}
+                        className={`arabic-text grid size-14 place-items-center rounded-2xl border text-2xl transition-colors ${
+                          playing === letter
+                            ? 'border-brand-500 bg-brand-50 text-brand-700'
+                            : 'border-border bg-surface-2 text-ink hover:border-brand-400 hover:bg-brand-50 hover:text-brand-700'
+                        } disabled:cursor-not-allowed disabled:opacity-50`}
+                      >
+                        {letter}
+                      </button>
+                    </li>
                   ))}
-                </div>
+                </ul>
+                {active.lettersArabicName && (
+                  <p className="arabic-text mt-2 text-xs text-ink-faint" dir="rtl" lang="ar">
+                    {active.lettersArabicName}
+                  </p>
+                )}
               </div>
 
-              {/* Articulation Mechanics */}
               <div className="mt-6 space-y-4">
                 <div>
-                  <h5 className="text-xs font-bold uppercase tracking-wider text-ink-faint">
-                    Biomechanical Description
-                  </h5>
-                  <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">
-                    {activeMakhraj.description}
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-ink-faint">
+                    How it is produced
+                  </h3>
+                  <p className="mt-1.5 max-w-reading text-sm leading-relaxed text-ink-soft">
+                    {active.description}
                   </p>
                 </div>
 
-                <div className="rounded-xl border border-sand-200 bg-sand-50/50 p-4">
-                  <div className="flex items-center gap-2 text-xs font-bold text-brand-800">
-                    <Icon name="sparkle" size={14} />
-                    <span>Pronunciation Guidelines & Mastery Tips</span>
-                  </div>
-                  <ul className="mt-2 space-y-1.5 text-xs text-ink-soft">
-                    {activeMakhraj.tips.map((tip, idx) => (
-                      <li key={idx} className="flex items-start gap-2">
-                        <span className="mt-1 size-1.5 rounded-full bg-brand-500" />
+                <div className="rounded-xl border border-border bg-surface-2 p-4">
+                  <h3 className="flex items-center gap-2 text-xs font-bold text-brand-800">
+                    <Icon name="info" size={14} />
+                    What to watch for
+                  </h3>
+                  <ul className="mt-2 space-y-1.5 text-xs leading-relaxed text-ink-soft">
+                    {active.tips.map((tip) => (
+                      <li key={tip} className="flex items-start gap-2">
+                        <span
+                          aria-hidden="true"
+                          className="mt-1.5 size-1.5 shrink-0 rounded-full bg-brand-500"
+                        />
                         <span>{tip}</span>
                       </li>
                     ))}
@@ -294,22 +344,21 @@ export default function MakhaarijExplorerPage() {
                 </div>
               </div>
 
-              {/* Call to action */}
-              <div className="mt-7 flex items-center justify-between border-t border-sand-100 pt-5">
-                <span className="text-xs text-ink-faint">
-                  Practice these letters in Qa'idah Lesson 1
-                </span>
-                <Link to="/qaida/lesson/1">
-                  <Button size="sm" variant="gold">
-                    <Icon name="practice" size={14} />
-                    Practice in Studio
+              <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">
+                <p className="max-w-xs text-xs leading-relaxed text-ink-faint">
+                  Reading this is not the same as producing it. Take these letters into a lesson and
+                  record yourself saying them.
+                </p>
+                <Link to="/learn/qaida" className="shrink-0">
+                  <Button size="sm" variant="secondary">
+                    <Icon name="book" size={14} /> Open the Qa'idah
                   </Button>
                 </Link>
               </div>
             </Card>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
