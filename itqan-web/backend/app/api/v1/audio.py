@@ -1,9 +1,48 @@
 import uuid
+import hashlib
+from pathlib import Path
 from typing import Optional, List
 from fastapi import APIRouter, File, UploadFile, Form, HTTPException, Depends
+from fastapi.responses import Response
 from app.api.deps import get_tajweed_evaluator
 
+TTS_CACHE_DIR = Path(__file__).resolve().parent.parent.parent / "data" / "tts_cache"
+TTS_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+
 router = APIRouter(prefix="/audio", tags=["AI Audio Recitation & Teacher Feedback"])
+
+
+@router.get("/tts")
+async def generate_arabic_tts(text: str, voice: str = "ar-SA-HamedNeural", rate: str = "+0%"):
+    """
+    Synthesizes authentic Arabic neural pronunciation with disk caching.
+    Supports individual letters, words, and Quranic verses.
+    """
+    if not text or not text.strip():
+        raise HTTPException(status_code=400, detail="Text parameter is required.")
+
+    clean_text = text.strip()
+    cache_key = hashlib.md5(f"{clean_text}:{voice}:{rate}".encode("utf-8")).hexdigest()
+    cache_file = TTS_CACHE_DIR / f"{cache_key}.mp3"
+
+    if cache_file.exists():
+        return Response(content=cache_file.read_bytes(), media_type="audio/mpeg")
+
+    try:
+        import edge_tts
+        communicate = edge_tts.Communicate(clean_text, voice, rate=rate)
+        audio_data = bytearray()
+        async for chunk in communicate.stream():
+            if chunk["type"] == "audio":
+                audio_data.extend(chunk["data"])
+
+        if not audio_data:
+            raise HTTPException(status_code=500, detail="Speech generation produced empty audio.")
+
+        cache_file.write_bytes(bytes(audio_data))
+        return Response(content=bytes(audio_data), media_type="audio/mpeg")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"TTS synthesis failed: {str(e)}")
 
 @router.post("/evaluate")
 async def evaluate_recitation_contract(

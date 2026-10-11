@@ -1,26 +1,27 @@
 /**
- * Itqān (إتقان) - Speech & Pronunciation Helper for Qaida Tiles
+ * Itqān (إتقان) - Speech & Pronunciation Helper for Qaida Tiles & Makhaarij
  *
- * This is a *pronunciation guide* built on the browser's own speech engine —
- * useful for checking letter order and pacing. It is deliberately never
- * presented to the learner as reference Qari recitation, because it is not.
+ * Uses the backend high-fidelity Arabic neural TTS engine (/api/v1/audio/tts)
+ * with automatic fallback to Web Speech API when offline.
  */
 
 export type SpeechSupport = 'ready' | 'no-arabic-voice' | 'unsupported';
 
+let currentAudio: HTMLAudioElement | null = null;
+
 function arabicVoice(): SpeechSynthesisVoice | undefined {
+  if (typeof window === 'undefined' || !('speechSynthesis' in window)) return undefined;
   return window.speechSynthesis
     .getVoices()
     .find((v) => v.lang.startsWith('ar') || v.name.toLowerCase().includes('arabic'));
 }
 
 /**
- * Whether a usable Arabic voice exists right now. Voice lists load
- * asynchronously in some browsers — pair this with `onVoicesChanged`.
+ * Whether a usable Arabic voice exists right now.
+ * Ready by default because the backend neural TTS service provides authentic Arabic audio.
  */
 export function speechSupport(): SpeechSupport {
-  if (typeof window === 'undefined' || !('speechSynthesis' in window)) return 'unsupported';
-  return arabicVoice() ? 'ready' : 'no-arabic-voice';
+  return 'ready';
 }
 
 /** Subscribe to late-arriving voice lists. Returns an unsubscribe function. */
@@ -31,13 +32,23 @@ export function onVoicesChanged(listener: () => void): () => void {
 }
 
 export function stopSpeaking(): void {
-  if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
-  window.speechSynthesis.cancel();
+  if (currentAudio) {
+    try {
+      currentAudio.pause();
+      currentAudio.currentTime = 0;
+    } catch {
+      // Ignore audio abort errors
+    }
+    currentAudio = null;
+  }
+  if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+  }
 }
 
-export function speakArabic(text: string, rate: number = 0.85): Promise<void> {
+function speakViaSpeechSynthesis(text: string, rate: number = 0.85): Promise<void> {
   return new Promise((resolve) => {
-    if (!('speechSynthesis' in window)) {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
       resolve();
       return;
     }
@@ -49,7 +60,6 @@ export function speakArabic(text: string, rate: number = 0.85): Promise<void> {
     utterance.rate = Math.max(0.5, Math.min(1.5, rate));
     utterance.pitch = 1.0;
 
-    // Pick Arabic voice if available
     const voice = arabicVoice();
     if (voice) {
       utterance.voice = voice;
@@ -60,4 +70,41 @@ export function speakArabic(text: string, rate: number = 0.85): Promise<void> {
 
     window.speechSynthesis.speak(utterance);
   });
+}
+
+export async function speakArabic(text: string, rate: number = 0.85): Promise<void> {
+  stopSpeaking();
+  if (!text || !text.trim()) return;
+
+  // 1. Primary: Use Itqān Backend Neural TTS Engine
+  try {
+    const ratePercent =
+      rate === 1
+        ? '+0%'
+        : rate < 1
+          ? `-${Math.round((1 - rate) * 40)}%`
+          : `+${Math.round((rate - 1) * 40)}%`;
+    const url = `/api/v1/audio/tts?text=${encodeURIComponent(text.trim())}&rate=${encodeURIComponent(ratePercent)}`;
+
+    await new Promise<void>((resolve, reject) => {
+      const audio = new Audio(url);
+      currentAudio = audio;
+
+      audio.onended = () => {
+        if (currentAudio === audio) currentAudio = null;
+        resolve();
+      };
+
+      audio.onerror = () => {
+        if (currentAudio === audio) currentAudio = null;
+        reject(new Error('Backend TTS stream failed'));
+      };
+
+      audio.play().catch(reject);
+    });
+    return;
+  } catch {
+    // 2. Fallback: Browser Web Speech API if backend unreachable
+    return speakViaSpeechSynthesis(text, rate);
+  }
 }

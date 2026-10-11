@@ -7,3 +7,4 @@ torchaudio
 librosa
 scikit-learn
 numpy
+edge-tts
