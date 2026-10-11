@@ -19,3 +19,8 @@ __pycache__/
 venv/
 .venv/
 env/
+
+# Excluded documents & assets
+Final_Report.docx
+docs/diagrams/
+docs/petcare/
