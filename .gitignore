@@ -22,5 +22,9 @@ env/
 
 # Excluded documents & assets
 Final_Report.docx
+*.docx
+*.pdf
+screenshots/
 docs/diagrams/
 docs/petcare/
+

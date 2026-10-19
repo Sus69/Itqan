@@ -35,6 +35,8 @@ async def recommend_qari(
             }
         )
 
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Voice matching failed: {str(e)}")
 
@@ -73,5 +75,7 @@ async def match_voice_contract(
                 "matches": formatted_matches
             }
         }
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Voice matching failed: {str(e)}")

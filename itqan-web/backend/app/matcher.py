@@ -75,17 +75,22 @@ class VoiceMatcher:
     def process_audio(self, file_bytes: bytes, filename: str = "") -> np.ndarray:
         """
         Universal audio ingestion: accepts ALL audio formats (.wav, .mp3, .m4a, .ogg,
-        .flac, .webm, .aac, .opus, .wma, .amr, .aiff, etc.) and converts them into a
-        standardized 16,000 Hz Mono float32 numpy array.
+        .flac, .webm, .aac, .opus, .wma, .amr, .aiff, .caf, .3gp, .mp4, .alac, .ape, .wv, etc.)
+        and converts them into a standardized 16,000 Hz Mono float32 numpy array.
         """
-        # Stage 1: Try decoding with FFmpeg via imageio_ffmpeg
+        if not file_bytes or len(file_bytes) < 32:
+            raise ValueError("Uploaded file is empty or corrupted.")
+
+        # Stage 1: Try in-memory FFmpeg pipe (fastest for streamable formats)
         try:
             import subprocess
             import imageio_ffmpeg
             ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
             cmd = [
                 ffmpeg_exe,
+                "-nostdin",
                 "-i", "pipe:0",
+                "-vn",
                 "-f", "s16le",
                 "-ac", "1",
                 "-ar", "16000",
@@ -98,7 +103,7 @@ class VoiceMatcher:
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE
             )
-            raw_pcm, _ = proc.communicate(input=file_bytes)
+            raw_pcm, _ = proc.communicate(input=file_bytes, timeout=15)
             if proc.returncode == 0 and len(raw_pcm) > 0:
                 audio_int16 = np.frombuffer(raw_pcm, dtype=np.int16)
                 arr = audio_int16.astype(np.float32) / 32768.0
@@ -107,38 +112,51 @@ class VoiceMatcher:
         except Exception:
             pass
 
-        # Stage 2: In-memory librosa load
-        try:
-            audio_stream = io.BytesIO(file_bytes)
-            waveform, _ = librosa.load(audio_stream, sr=16000, mono=True, dtype=np.float32)
-            if waveform.size > 0:
-                return waveform
-        except Exception:
-            pass
-
-        # Stage 3: In-memory soundfile load
-        try:
-            audio_stream = io.BytesIO(file_bytes)
-            data, sr = sf.read(audio_stream, dtype="float32")
-            if data.size > 0:
-                if data.ndim > 1:
-                    data = np.mean(data, axis=1)
-                if sr != 16000:
-                    data = librosa.resample(data, orig_sr=sr, target_sr=16000)
-                return data.astype(np.float32)
-        except Exception:
-            pass
-
-        # Stage 4: Tempfile fallback
-        ext = Path(filename).suffix if filename else ".audio"
-        if not ext.startswith("."):
+        # Stage 2: Tempfile FFmpeg decoding (crucial for random-access containers like CAF,
+        # M4A without faststart, MP4, MOV, 3GP, and mobile voice memos)
+        ext = Path(filename).suffix if filename else ""
+        if not ext.startswith(".") and ext:
             ext = f".{ext}"
+        if not ext:
+            ext = ".audio"
 
         with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp:
             tmp.write(file_bytes)
             tmp_path = Path(tmp.name)
 
         try:
+            # 2a. FFmpeg on temporary file with seeking support and video disabling (-vn)
+            try:
+                import subprocess
+                import imageio_ffmpeg
+                ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
+                cmd = [
+                    ffmpeg_exe,
+                    "-y",
+                    "-nostdin",
+                    "-i", str(tmp_path),
+                    "-vn",
+                    "-f", "s16le",
+                    "-ac", "1",
+                    "-ar", "16000",
+                    "-acodec", "pcm_s16le",
+                    "pipe:1"
+                ]
+                proc = subprocess.Popen(
+                    cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE
+                )
+                raw_pcm, _ = proc.communicate(timeout=15)
+                if proc.returncode == 0 and len(raw_pcm) > 0:
+                    audio_int16 = np.frombuffer(raw_pcm, dtype=np.int16)
+                    arr = audio_int16.astype(np.float32) / 32768.0
+                    if arr.size > 0:
+                        return arr
+            except Exception:
+                pass
+
+            # 2b. Torchaudio on tempfile
             try:
                 tensor, sr = torchaudio.load(str(tmp_path))
                 if tensor.numel() > 0:
@@ -149,15 +167,57 @@ class VoiceMatcher:
                         tensor = torchaudio.functional.resample(
                             tensor, orig_freq=sr, new_freq=16000
                         )
-                    return tensor.cpu().numpy().astype(np.float32)
+                    arr = tensor.cpu().numpy().astype(np.float32)
+                    if arr.size > 0:
+                        return arr
             except Exception:
                 pass
 
-            waveform, _ = librosa.load(str(tmp_path), sr=16000, mono=True, dtype=np.float32)
-            if waveform.size > 0:
-                return waveform
+            # 2c. Soundfile on tempfile
+            try:
+                data, sr = sf.read(str(tmp_path), dtype="float32")
+                if data.size > 0:
+                    if data.ndim > 1:
+                        data = np.mean(data, axis=1)
+                    if sr != 16000:
+                        data = librosa.resample(data, orig_sr=sr, target_sr=16000)
+                    arr = data.astype(np.float32)
+                    if arr.size > 0:
+                        return arr
+            except Exception:
+                pass
 
-            raise ValueError("Audio recording format could not be decoded.")
+            # 2d. Librosa on tempfile
+            try:
+                waveform, _ = librosa.load(str(tmp_path), sr=16000, mono=True, dtype=np.float32)
+                if waveform.size > 0:
+                    return waveform
+            except Exception:
+                pass
+
+            # Stage 3: In-memory soundfile load fallback
+            try:
+                audio_stream = io.BytesIO(file_bytes)
+                data, sr = sf.read(audio_stream, dtype="float32")
+                if data.size > 0:
+                    if data.ndim > 1:
+                        data = np.mean(data, axis=1)
+                    if sr != 16000:
+                        data = librosa.resample(data, orig_sr=sr, target_sr=16000)
+                    return data.astype(np.float32)
+            except Exception:
+                pass
+
+            # Stage 4: In-memory librosa load fallback
+            try:
+                audio_stream = io.BytesIO(file_bytes)
+                waveform, _ = librosa.load(audio_stream, sr=16000, mono=True, dtype=np.float32)
+                if waveform.size > 0:
+                    return waveform
+            except Exception:
+                pass
+
+            raise ValueError("Audio recording format could not be decoded. Please upload a standard audio file (MP3, WAV, M4A, AAC, FLAC, OGG, OPUS, AMR, CAF, WEBM, 3GP, etc.).")
         finally:
             if tmp_path.exists():
                 try:

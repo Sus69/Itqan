@@ -472,9 +472,32 @@ Itqān/
 - **Unified Dev Script**: Configured `concurrently` in `package.json` to start both Vite frontend and FastAPI backend (`uvicorn`) synchronously with a single `npm run dev` command.
 - **Health & Warmup Retries**: Configured reverse proxy in `vite.config.ts` for `/api` and `/health` and added rapid 3-second warmup polling in `useServiceHealth`.
 
+---
 
+## 📅 Session Log: 2026-10-19 (Universal Audio Format Ingestion & Qari Voice Matcher Enhancement)
 
+### 1. Universal Audio Decoding Pipeline (`matcher.py` & `tajweed.py`)
+- **Seekable Tempfile FFmpeg Ingestion**:
+  - Implemented multi-stage audio decoding engine that handles streamable and random-access audio/video containers (`.mp3`, `.m4a`, `.wav`, `.aac`, `.mpeg`, `.mpg`, `.ogg`, `.opus`, `.flac`, `.webm`, `.wma`, `.amr`, `.aiff`, `.caf`, `.3gp`, `.mp4`, `.mov`, `.alac`, `.ape`, `.wv`, `.ac3`, etc.).
+  - Added `-vn` flag to FFmpeg command to isolate and decode audio tracks from phone video recordings.
+  - Resolved `moov atom not found` and `EOFError` on Apple Voice Memos and mobile recordings by routing seekable containers through temporary file decoding before falling back to `torchaudio`, `soundfile`, and `librosa`.
+  - Added downmixing to 1-channel mono and automatic resampling to 16,000 Hz `float32` PCM for WavLM x-vector embedding extraction.
+- **Enhanced API Error Handling**:
+  - Configured `POST /api/v1/matcher/recommend` and `POST /api/v1/voice/match` to catch `ValueError` and return descriptive `HTTP 400 Bad Request` messages for corrupted or too-short audio files (<0.5s) instead of generic `500` server errors.
 
+### 2. Enhanced Voice Matcher UI (`VoiceMatchPage.tsx`)
+- **Universal File Acceptance**:
+  - Expanded `<input type="file">` filter to accept all audio and media formats (`audio/*`, `video/*`, `.mpeg`, `.mpg`, `.mp3`, `.wav`, `.m4a`, `.aac`, `.flac`, `.webm`, `.opus`, `.amr`, `.caf`, `.3gp`, `.mp4`, `*/*`), ensuring native OS file dialogs (Windows, macOS, iOS, Android) never hide or disable WhatsApp voice notes or phone recordings.
+- **Dual Input Mode Switcher**:
+  - Added a clean segmented toggle between **"Record Live"** (browser microphone recording) and **"Upload Audio File"** (device file picker & drag-and-drop).
+- **Interactive Drag-and-Drop Dropzone**:
+  - Built an intuitive drag-and-drop target with glowing hover states, animated upload iconography, and instant match triggering on drop.
+- **Uploaded File Metadata & Format Badges**:
+  - Added real-time display of uploaded file name and formatted file size (e.g. `2.4 MB`).
+  - Added responsive format chips showcasing supported formats: `MP3`, `M4A`, `WAV`, `AAC`, `MPEG`, `FLAC`, `OGG`, `OPUS`, `WEBM`, `AMR`, `CAF`, `3GP`, `MP4`, `+ All media`.
+
+### 3. Repository Configuration (`.gitignore`)
+- Ignored `*.docx`, `*.pdf`, and `screenshots/` directory across the workspace to keep git commits clean of non-source artifacts.
 
 
 

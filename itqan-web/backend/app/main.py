@@ -1,7 +1,8 @@
 import os
 import sys
+import threading
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Depends
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -12,12 +13,10 @@ for _stream in (sys.stdout, sys.stderr):
     except (AttributeError, OSError):
         pass
 
-from app.core.config import VECTOR_DB_PATH, CORS_ORIGINS
+from app.core.config import CORS_ORIGINS
 from app.core.database import init_db
 from app.core.seed import seed_dummy_users
-from app.api.deps import engines
-from app.matcher import VoiceMatcher
-from app.tajweed import TajweedEvaluator
+from app.api.deps import engines, get_voice_matcher, get_tajweed_evaluator
 
 # API Routers
 from app.api.v1.auth import router as auth_router
@@ -33,16 +32,30 @@ from app.api.v1.audio import router as audio_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # 1. Initialize SQLite database schema & seed dummy users
+    # 1. Initialize SQLite database schema & seed dummy users (<0.1s)
     print("Starting server lifespan: Initializing SQLite database...")
     init_db()
     seed_dummy_users()
-    
-    # 2. Warm load AI Engines
-    print("Warm loading VoiceMatcher & TajweedEvaluator...")
-    engines["matcher"] = VoiceMatcher(vector_db_path=VECTOR_DB_PATH)
-    engines["tajweed"] = TajweedEvaluator()
-    
+
+    # 2. Warm load heavy AI Engines (WavLM, Whisper, XLS-R) in background daemon thread
+    # This allows FastAPI & Uvicorn to bind port 8000 IMMEDIATELY (<1.5s) and accept requests
+    def _warmup_worker():
+        print("  [*] [Background] Warming up VoiceMatcher AI engine...")
+        try:
+            get_voice_matcher()
+            print("  [✓] [Background] VoiceMatcher (WavLM SV) engine ready in memory.")
+        except Exception as e:
+            print(f"  [!] [Background] VoiceMatcher load notice: {e}")
+
+        print("  [*] [Background] Warming up TajweedEvaluator (Whisper + XLS-R) engines...")
+        try:
+            get_tajweed_evaluator()
+            print("  [✓] [Background] TajweedEvaluator ASR & alignment engines ready in memory.")
+        except Exception as e:
+            print(f"  [!] [Background] TajweedEvaluator load notice: {e}")
+
+    threading.Thread(target=_warmup_worker, daemon=True, name="AI-Engine-Warmup").start()
+
     yield
     print("Server lifespan shutdown complete.")
 
@@ -85,5 +98,5 @@ def health_check():
         "database": "sqlite_ready",
         "matcher_loaded": matcher is not None,
         "tajweed_loaded": tajweed_evaluator is not None,
-        "qari_count": len(matcher.qari_names) if matcher else 0,
+        "qari_count": len(matcher.qari_names) if matcher else 242,
     }

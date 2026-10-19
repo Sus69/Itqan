@@ -8,22 +8,84 @@ import { useAuth } from '@/lib/authContext';
 import { useServiceHealth } from '@/hooks/useServiceHealth';
 
 /**
+ * Universal list of all audio and container formats accepted by the system.
+ * Including * / * ensures native OS file dialogs (Windows, macOS, iOS, Android)
+ * don't filter out WhatsApp notes, voice memos, or files with unusual MIME types.
+ */
+const ALL_AUDIO_ACCEPT = [
+  'audio/*',
+  'video/*',
+  '.mp3',
+  '.wav',
+  '.m4a',
+  '.aac',
+  '.ogg',
+  '.oga',
+  '.flac',
+  '.webm',
+  '.weba',
+  '.opus',
+  '.amr',
+  '.awb',
+  '.aiff',
+  '.aif',
+  '.aifc',
+  '.wma',
+  '.asf',
+  '.mp4',
+  '.m4v',
+  '.mpeg',
+  '.mpg',
+  '.mov',
+  '.mkv',
+  '.avi',
+  '.3gp',
+  '.3g2',
+  '.3ga',
+  '.caf',
+  '.alac',
+  '.ape',
+  '.wv',
+  '.ac3',
+  '.eac3',
+  '.dts',
+  '.mp2',
+  '.mp1',
+  '.m1a',
+  '.m2a',
+  '.au',
+  '.snd',
+  '.voc',
+  '.ra',
+  '*/*',
+].join(',');
+
+const FORMAT_CHIPS = ['MP3', 'M4A', 'WAV', 'AAC', 'MPEG', 'FLAC', 'OGG', 'OPUS', 'WEBM', 'AMR', 'CAF', '3GP', 'MP4'];
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+/**
  * Voice match — a supporting experience, not a gate.
  *
- * It sets the reference Qari that lesson copy refers to. Nothing else in the app
- * depends on it, so it lives under the profile and says plainly what it does and
- * does not affect. The reciter count comes from the running service rather than
- * being written into the copy.
+ * It sets the reference Qari that lesson copy refers to. Users can either recite live
+ * or upload any audio recording format from their computer or mobile device.
  */
 export default function VoiceMatchPage() {
   const { token, refreshUser } = useAuth();
   const { state: serviceState, data: health, recheck } = useServiceHealth();
 
+  const [inputMode, setInputMode] = useState<'record' | 'upload'>('record');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<VoiceMatchResponse | null>(null);
   const [selected, setSelected] = useState(0);
   const [saved, setSaved] = useState<'account' | 'device' | null>(null);
+  const [uploadedFile, setUploadedFile] = useState<{ name: string; size: number } | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const qariCount = health?.qari_count;
@@ -50,8 +112,32 @@ export default function VoiceMatchPage() {
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setUploadedFile({ name: file.name, size: file.size });
     void runMatch(file, file.name);
     e.target.value = '';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!busy) setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    if (busy) return;
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+    setUploadedFile({ name: file.name, size: file.size });
+    void runMatch(file, file.name);
   };
 
   const saveReference = async () => {
@@ -85,35 +171,159 @@ export default function VoiceMatchPage() {
           Choose your reference Qari
         </h1>
         <p className="mt-2 max-w-prose text-sm leading-relaxed text-ink-soft">
-          Recite for a few moments and the voice engine compares your vocal signature against
-          {qariCount ? ` ${qariCount} reciters` : ' the reciters it has loaded'} to suggest the closest
-          few. This is a preference, not an assessment — it changes which reciter the app names as
-          your model, and nothing about your lessons or scores.
+          Recite live or upload any audio recording. The AI voice engine compares your vocal signature against
+          {qariCount ? ` ${qariCount} reciters` : ' the reciters in the database'} to suggest your closest
+          vocal matches.
         </p>
       </div>
 
-      <Card className="space-y-4">
-        <SectionHeader
-          title="Share your voice"
-          subtitle="Around 30 seconds of clear recitation gives the most stable comparison."
-        />
+      <Card
+        className={`space-y-4 transition-colors ${
+          isDragging ? 'border-brand-500 bg-brand-50/30 ring-2 ring-brand-500/30' : ''
+        }`}
+        onDragOver={handleDragOver}
+        onDragEnter={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle pb-3">
+          <SectionHeader
+            title="Share your voice"
+            subtitle="Around 20–30 seconds of clear recitation gives the most stable comparison."
+          />
 
-        <RecordingSession
-          onSubmit={runMatch}
-          busy={busy}
-          busyLabel="Comparing your voice"
-          resetKey={data ? 'matched' : 'fresh'}
-          serviceAvailable={serviceState !== 'unavailable'}
-          onRetryService={recheck}
-          guidance="Recite anything you know well, at your natural volume and pace."
-        />
-
-        <div className="flex items-center justify-center gap-3">
-          <span className="text-xs font-semibold text-ink-faint">or</span>
-          <Button variant="ghost" onClick={() => fileInputRef.current?.click()} disabled={busy}>
-            <Icon name="upload" size={17} /> Upload an audio file
-          </Button>
+          {/* Mode Switcher */}
+          <div className="inline-flex items-center rounded-lg bg-surface-muted p-1 text-xs font-medium">
+            <button
+              type="button"
+              onClick={() => setInputMode('record')}
+              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 transition-all ${
+                inputMode === 'record'
+                  ? 'bg-surface shadow-xs text-ink font-semibold'
+                  : 'text-ink-soft hover:text-ink'
+              }`}
+            >
+              <Icon name="microphone" size={14} /> Record Live
+            </button>
+            <button
+              type="button"
+              onClick={() => setInputMode('upload')}
+              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 transition-all ${
+                inputMode === 'upload'
+                  ? 'bg-surface shadow-xs text-ink font-semibold'
+                  : 'text-ink-soft hover:text-ink'
+              }`}
+            >
+              <Icon name="upload" size={14} /> Upload Audio File
+            </button>
+          </div>
         </div>
+
+        {/* Live Recording Mode */}
+        {inputMode === 'record' && (
+          <div className="space-y-4">
+            <RecordingSession
+              onSubmit={runMatch}
+              busy={busy}
+              busyLabel="Comparing your voice"
+              resetKey={data ? 'matched' : 'fresh'}
+              serviceAvailable={serviceState !== 'unavailable'}
+              onRetryService={recheck}
+              guidance="Recite anything you know well, at your natural volume and pace."
+            />
+
+            <div className="flex items-center justify-center gap-3 pt-1">
+              <span className="text-xs font-semibold text-ink-faint">or</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={busy}
+              >
+                <Icon name="upload" size={15} /> Upload an audio file from device
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Upload Audio Mode */}
+        {inputMode === 'upload' && (
+          <div className="space-y-4">
+            <div
+              onClick={() => !busy && fileInputRef.current?.click()}
+              className={`cursor-pointer rounded-xl border-2 border-dashed p-6 text-center transition-all ${
+                isDragging
+                  ? 'border-brand-500 bg-brand-50/50'
+                  : 'border-border hover:border-brand-400 hover:bg-surface-muted/50'
+              } ${busy ? 'opacity-60 cursor-not-allowed' : ''}`}
+            >
+              <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-brand-50 text-brand-700">
+                <Icon name="upload" size={24} />
+              </div>
+              <p className="mt-3 text-sm font-semibold text-ink">
+                {isDragging ? 'Drop your audio file here' : 'Choose an audio file or drag & drop'}
+              </p>
+              <p className="mt-1 text-xs text-ink-soft">
+                All audio formats supported · MP3, M4A, WAV, AAC, FLAC, OGG, OPUS, AMR, CAF, 3GP, MP4
+              </p>
+
+              <div className="mt-4 flex justify-center">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    fileInputRef.current?.click();
+                  }}
+                  disabled={busy}
+                >
+                  <Icon name="search" size={14} /> Browse from device
+                </Button>
+              </div>
+            </div>
+
+            {/* Uploaded File Status */}
+            {uploadedFile && (
+              <div className="flex items-center justify-between rounded-lg bg-surface-muted px-3.5 py-2.5 text-xs">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className="text-brand-600">
+                    <Icon name="voice" size={16} />
+                  </span>
+                  <span className="font-semibold text-ink truncate max-w-xs sm:max-w-md">
+                    {uploadedFile.name}
+                  </span>
+                  <span className="text-ink-faint">({formatFileSize(uploadedFile.size)})</span>
+                </div>
+                {busy && (
+                  <span className="inline-flex items-center gap-1.5 font-medium text-brand-700">
+                    <span className="size-2 rounded-full bg-brand-600 animate-ping" />
+                    Analysing...
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* Supported Formats Chips */}
+            <div className="space-y-1.5 pt-1">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-faint">
+                Supported formats
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {FORMAT_CHIPS.map((fmt) => (
+                  <span
+                    key={fmt}
+                    className="rounded-md bg-surface-muted px-2 py-0.5 text-[11px] font-medium text-ink-soft"
+                  >
+                    .{fmt.toLowerCase()}
+                  </span>
+                ))}
+                <span className="rounded-md bg-brand-50 px-2 py-0.5 text-[11px] font-semibold text-brand-700">
+                  + All media
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {error && (
           <InlineNotice
@@ -166,8 +376,14 @@ export default function VoiceMatchPage() {
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-3">
-              <Button variant="ghost" onClick={() => setData(null)}>
-                <Icon name="restart" size={16} /> Record another take
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setData(null);
+                  setUploadedFile(null);
+                }}
+              >
+                <Icon name="restart" size={16} /> Try another recording
               </Button>
               <Button
                 variant={saved ? 'secondary' : 'primary'}
@@ -201,10 +417,11 @@ export default function VoiceMatchPage() {
         </Card>
       )}
 
+      {/* Hidden file input with universal audio format support */}
       <input
         ref={fileInputRef}
         type="file"
-        accept="audio/*,.mp3,.m4a,.aac,.ogg,.flac,.webm,.wav,.opus,.amr,.aiff,.wma"
+        accept={ALL_AUDIO_ACCEPT}
         className="hidden"
         aria-label="Upload an audio file for voice matching"
         onChange={handleUpload}
@@ -212,3 +429,4 @@ export default function VoiceMatchPage() {
     </div>
   );
 }
+
